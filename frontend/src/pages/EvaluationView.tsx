@@ -2,6 +2,9 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { api } from '../services/api.js';
 import { ProvenanceBadge } from '../components/common/ProvenanceBadge.js';
+import { SensitivitySimulator } from '../components/analysis/SensitivitySimulator.js';
+import { BreakevenCalculator } from '../components/analysis/BreakevenCalculator.js';
+import { RobustnessSummary } from '../components/analysis/RobustnessSummary.js';
 import { useAuth } from '../context/AuthContext.js';
 import {
   Award,
@@ -11,6 +14,10 @@ import {
   Columns,
   CheckCircle2,
   XCircle,
+  Table,
+  Sliders,
+  Target,
+  Activity,
 } from 'lucide-react';
 
 export const EvaluationView: React.FC = () => {
@@ -21,6 +28,7 @@ export const EvaluationView: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [actionSuccess, setActionSuccess] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<'MATRIX' | 'SENSITIVITY' | 'BREAKEVEN' | 'ROBUSTNESS'>('MATRIX');
 
   // Human Override Modal State
   const [showOverrideModal, setShowOverrideModal] = useState(false);
@@ -39,7 +47,6 @@ export const EvaluationView: React.FC = () => {
       const res = await api.tenders.getExplainability(id);
       setReport(res.report);
       if (res.report.results && res.report.results.length > 0) {
-        // Default select top 2 bids for comparison
         setComparedBidIds(res.report.results.slice(0, 2).map((r: any) => r.bidId));
       }
     } catch (err: any) {
@@ -107,10 +114,10 @@ export const EvaluationView: React.FC = () => {
             <span>Back to Tender Dossier</span>
           </Link>
           <h1 className="text-lg font-bold text-stone-900">
-            SAW Explainability & Scoring Breakdown: {report.tenderCode}
+            SAW Evaluation & Analytical Toolkit: {report.tenderCode}
           </h1>
           <p className="text-xs text-stone-500">
-            Transparent, deterministic scoring matrix computed against frozen configuration snapshot
+            Transparent scoring matrix, real-time weight sensitivity simulator, and breakeven calculators
           </p>
         </div>
 
@@ -127,9 +134,9 @@ export const EvaluationView: React.FC = () => {
           {user?.role === 'ADMIN' && report.status === 'EVALUATED' && (
             <button
               onClick={() => setShowOverrideModal(true)}
-              className="btn-secondary text-xs text-status-warningText border-status-warningBorder flex items-center gap-1.5"
+              className="btn-secondary text-xs text-brand border-brand flex items-center gap-1.5"
             >
-              <AlertTriangle className="w-3.5 h-3.5 text-status-warningText" />
+              <AlertTriangle className="w-3.5 h-3.5 text-brand" />
               <span>Human Winner Override</span>
             </button>
           )}
@@ -155,7 +162,7 @@ export const EvaluationView: React.FC = () => {
         <div className="flex items-center gap-2">
           <ShieldCheck className="w-4 h-4 text-brand shrink-0" />
           <span className="font-mono text-stone-800">
-            Evaluated Against Config Hash: <strong className="break-all">{report.configHash}</strong>
+            Frozen Config Hash: <strong className="break-all">{report.configHash}</strong>
           </span>
         </div>
         <span className="font-mono text-[11px] text-stone-500 whitespace-nowrap">
@@ -164,7 +171,7 @@ export const EvaluationView: React.FC = () => {
       </div>
 
       {/* Recommended Winner Banner */}
-      {winnerResult ? (
+      {winnerResult && (
         <div className="gov-panel bg-[#F0FDF4] border-[#BBF7D0]">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
@@ -188,138 +195,213 @@ export const EvaluationView: React.FC = () => {
             </div>
           </div>
         </div>
-      ) : (
-        <div className="gov-panel bg-stone-100 border-stone-300 text-stone-600 text-xs">
-          Outcome: <strong className="text-stone-800">{report.summary?.outcome}</strong>. No eligible winner selected.
-        </div>
       )}
 
-      {/* Main Explainability Ranking Matrix */}
-      <div className="gov-panel p-0 overflow-hidden">
-        <div className="p-3 border-b border-stone-200 bg-stone-50 flex items-center justify-between">
-          <h2 className="text-xs font-bold text-stone-800 uppercase tracking-wider">
-            Comprehensive SAW Ranking Matrix (Eligible Bids)
-          </h2>
-          <span className="text-[11px] text-stone-500">
-            Raw Values • Normalized Scores [0..100] • Weight-Factored Scores
-          </span>
-        </div>
+      {/* Analytical Tab Navigation */}
+      <div className="border-b border-stone-300 flex space-x-2">
+        <button
+          onClick={() => setActiveTab('MATRIX')}
+          className={`px-3 py-2 text-xs font-semibold border-b-2 flex items-center gap-1.5 transition-colors ${
+            activeTab === 'MATRIX'
+              ? 'border-brand text-brand bg-white'
+              : 'border-transparent text-stone-600 hover:text-stone-900 hover:border-stone-300'
+          }`}
+        >
+          <Table className="w-3.5 h-3.5" />
+          <span>SAW Scoring Matrix</span>
+        </button>
 
-        {eligibleResults.length === 0 ? (
-          <div className="p-6 text-center text-xs text-stone-500">No eligible bids ranked.</div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table>
-              <thead>
-                <tr>
-                  <th>Rank</th>
-                  <th>Vendor Name & Bid</th>
-                  {report.scoringCriteria?.map((c: any) => (
-                    <th key={c.key} className="text-center">
-                      <div>{c.label}</div>
-                      <div className="text-[10px] text-stone-500 font-normal">
-                        ({c.weight}% • {c.direction})
-                      </div>
-                    </th>
-                  ))}
-                  <th className="text-right font-bold">Final Score</th>
-                </tr>
-              </thead>
-              <tbody>
-                {eligibleResults.map((r: any) => (
-                  <tr key={r.bidId} className={r.rank === 1 ? 'bg-[#F0FDF4]/40 font-medium' : ''}>
-                    <td className="font-mono text-xs font-bold text-center">
-                      {r.rank === 1 ? (
-                        <span className="inline-flex items-center justify-center w-5 h-5 bg-[#15803D] text-white rounded-full text-xs">
-                          1
-                        </span>
-                      ) : (
-                        `#${r.rank}`
-                      )}
-                    </td>
-                    <td>
-                      <div className="text-xs font-bold text-stone-900">{r.vendorName}</div>
-                      <div className="font-mono text-[11px] text-stone-500">{r.bidId.slice(-8)}</div>
-                    </td>
-                    {report.scoringCriteria?.map((c: any) => {
-                      const item = r.breakdown?.find((b: any) => b.key === c.key);
-                      return (
-                        <td key={c.key} className="text-center text-xs">
-                          <div className="font-mono font-semibold text-stone-900">
-                            {typeof item?.rawValue === 'number'
-                              ? c.key === 'price'
-                                ? `₹${(item.rawValue / 100).toLocaleString('en-IN')}`
-                                : item.rawValue
-                              : item?.rawValue ?? '—'}
-                          </div>
-                          <div className="text-[10px] text-stone-500 font-mono">
-                            Norm: {item?.normalizedScore?.toFixed(1)} | Wgt: {item?.weightedScore?.toFixed(2)}
-                          </div>
-                          <div className="mt-0.5">
-                            <ProvenanceBadge
-                              status={item?.provenance?.status || 'UNVERIFIED'}
-                              source={item?.provenance?.source}
-                            />
-                          </div>
-                        </td>
-                      );
-                    })}
-                    <td className="text-right font-mono text-sm font-bold text-stone-900">
-                      {r.finalScore?.toFixed(4)}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+        <button
+          onClick={() => setActiveTab('SENSITIVITY')}
+          className={`px-3 py-2 text-xs font-semibold border-b-2 flex items-center gap-1.5 transition-colors ${
+            activeTab === 'SENSITIVITY'
+              ? 'border-brand text-brand bg-white'
+              : 'border-transparent text-stone-600 hover:text-stone-900 hover:border-stone-300'
+          }`}
+        >
+          <Sliders className="w-3.5 h-3.5" />
+          <span>Weight Sensitivity Simulator</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('BREAKEVEN')}
+          className={`px-3 py-2 text-xs font-semibold border-b-2 flex items-center gap-1.5 transition-colors ${
+            activeTab === 'BREAKEVEN'
+              ? 'border-brand text-brand bg-white'
+              : 'border-transparent text-stone-600 hover:text-stone-900 hover:border-stone-300'
+          }`}
+        >
+          <Target className="w-3.5 h-3.5" />
+          <span>Breakeven Delta Calculator</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('ROBUSTNESS')}
+          className={`px-3 py-2 text-xs font-semibold border-b-2 flex items-center gap-1.5 transition-colors ${
+            activeTab === 'ROBUSTNESS'
+              ? 'border-brand text-brand bg-white'
+              : 'border-transparent text-stone-600 hover:text-stone-900 hover:border-stone-300'
+          }`}
+        >
+          <Activity className="w-3.5 h-3.5" />
+          <span>Ranking Robustness & Margin</span>
+        </button>
       </div>
 
-      {/* Disqualified / Ineligible Bids Breakdown */}
-      {ineligibleResults.length > 0 && (
-        <div className="gov-panel p-0 overflow-hidden border-status-failedBorder">
-          <div className="p-3 border-b border-status-failedBorder bg-status-failedBg/40 flex items-center justify-between">
-            <h2 className="text-xs font-bold text-status-failedText uppercase tracking-wider">
-              Disqualified / Ineligible Bids ({ineligibleResults.length})
-            </h2>
-            <span className="text-[11px] text-stone-500">Excluded from normalization and ranking</span>
+      {/* Tab 1: SAW Scoring Matrix */}
+      {activeTab === 'MATRIX' && (
+        <div className="space-y-6">
+          <div className="gov-panel p-0 overflow-hidden">
+            <div className="p-3 border-b border-stone-200 bg-stone-50 flex items-center justify-between">
+              <h2 className="text-xs font-bold text-stone-800 uppercase tracking-wider">
+                Official SAW Ranking Matrix (Eligible Cohort)
+              </h2>
+              <span className="text-[11px] text-stone-500">
+                Raw Values • Normalized Scores [0..100] • Weight-Factored Scores
+              </span>
+            </div>
+
+            {eligibleResults.length === 0 ? (
+              <div className="p-6 text-center text-xs text-stone-500">No eligible bids ranked.</div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Rank</th>
+                      <th>Vendor Name & Bid</th>
+                      {report.scoringCriteria?.map((c: any) => (
+                        <th key={c.key} className="text-center">
+                          <div>{c.label}</div>
+                          <div className="text-[10px] text-stone-500 font-normal">
+                            ({c.weight}% • {c.direction})
+                          </div>
+                        </th>
+                      ))}
+                      <th className="text-right font-bold">Final Score</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {eligibleResults.map((r: any) => (
+                      <tr key={r.bidId} className={r.rank === 1 ? 'bg-[#F0FDF4]/40 font-medium' : ''}>
+                        <td className="font-mono text-xs font-bold text-center">
+                          {r.rank === 1 ? (
+                            <span className="inline-flex items-center justify-center w-5 h-5 bg-[#15803D] text-white rounded-full text-xs">
+                              1
+                            </span>
+                          ) : (
+                            `#${r.rank}`
+                          )}
+                        </td>
+                        <td>
+                          <div className="text-xs font-bold text-stone-900">{r.vendorName}</div>
+                          <div className="font-mono text-[11px] text-stone-500">{r.bidId.slice(-8)}</div>
+                        </td>
+                        {report.scoringCriteria?.map((c: any) => {
+                          const item = r.breakdown?.find((b: any) => b.key === c.key);
+                          return (
+                            <td key={c.key} className="text-center text-xs">
+                              <div className="font-mono font-semibold text-stone-900">
+                                {typeof item?.rawValue === 'number'
+                                  ? c.key === 'price'
+                                    ? `₹${(item.rawValue / 100).toLocaleString('en-IN')}`
+                                    : item.rawValue
+                                  : item?.rawValue ?? '—'}
+                              </div>
+                              <div className="text-[10px] text-stone-500 font-mono">
+                                Norm: {item?.normalizedScore?.toFixed(1)} | Wgt: {item?.weightedScore?.toFixed(2)}
+                              </div>
+                              <div className="mt-0.5">
+                                <ProvenanceBadge
+                                  status={item?.provenance?.status || 'UNVERIFIED'}
+                                  source={item?.provenance?.source}
+                                />
+                              </div>
+                            </td>
+                          );
+                        })}
+                        <td className="text-right font-mono text-sm font-bold text-stone-900">
+                          {r.finalScore?.toFixed(4)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
-          <div className="overflow-x-auto">
-            <table>
-              <thead>
-                <tr>
-                  <th>Vendor Name</th>
-                  <th>Bid ID</th>
-                  <th>Failed Eligibility Rules</th>
-                  <th>Disqualification Rationale</th>
-                </tr>
-              </thead>
-              <tbody>
-                {ineligibleResults.map((r: any) => (
-                  <tr key={r.bidId}>
-                    <td className="font-medium text-xs text-stone-900">{r.vendorName}</td>
-                    <td className="font-mono text-xs text-stone-500">{r.bidId}</td>
-                    <td className="text-xs font-mono text-status-failedText">
-                      {r.failedRules?.map((f: any) => f.code).join(', ') || 'CONSTRAINT_VIOLATION'}
-                    </td>
-                    <td className="text-xs text-stone-600">
-                      {r.failedRules?.map((f: any) => f.message).join('; ') || 'Did not meet mandatory tender constraints'}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+
+          {/* Disqualified List */}
+          {ineligibleResults.length > 0 && (
+            <div className="gov-panel p-0 overflow-hidden border-status-failedBorder">
+              <div className="p-3 border-b border-status-failedBorder bg-status-failedBg/40 flex items-center justify-between">
+                <h2 className="text-xs font-bold text-status-failedText uppercase tracking-wider">
+                  Disqualified / Ineligible Bids ({ineligibleResults.length})
+                </h2>
+                <span className="text-[11px] text-stone-500">Excluded from normalization and ranking</span>
+              </div>
+              <div className="overflow-x-auto">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Vendor Name</th>
+                      <th>Bid ID</th>
+                      <th>Failed Eligibility Rules</th>
+                      <th>Disqualification Rationale</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {ineligibleResults.map((r: any) => (
+                      <tr key={r.bidId}>
+                        <td className="font-medium text-xs text-stone-900">{r.vendorName}</td>
+                        <td className="font-mono text-xs text-stone-500">{r.bidId}</td>
+                        <td className="text-xs font-mono text-status-failedText">
+                          {r.failedRules?.map((f: any) => f.code).join(', ') || 'CONSTRAINT_VIOLATION'}
+                        </td>
+                        <td className="text-xs text-stone-600">
+                          {r.failedRules?.map((f: any) => f.message).join('; ') || 'Did not meet mandatory constraints'}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
-      {/* Side-by-Side Comparative Matrix Modal */}
+      {/* Tab 2: Sensitivity Simulator */}
+      {activeTab === 'SENSITIVITY' && (
+        <SensitivitySimulator
+          results={report.results || []}
+          criteria={report.scoringCriteria || []}
+        />
+      )}
+
+      {/* Tab 3: Breakeven Calculator */}
+      {activeTab === 'BREAKEVEN' && (
+        <BreakevenCalculator
+          results={report.results || []}
+          criteria={report.scoringCriteria || []}
+        />
+      )}
+
+      {/* Tab 4: Robustness Summary */}
+      {activeTab === 'ROBUSTNESS' && (
+        <RobustnessSummary
+          results={report.results || []}
+          criteria={report.scoringCriteria || []}
+        />
+      )}
+
+      {/* Side-by-Side Comparison Modal */}
       {showComparison && comparisonData && (
         <div className="gov-panel border-stone-400">
           <div className="gov-panel-header">
             <div>
               <h3 className="text-sm font-bold text-stone-900">Side-by-Side Bid Comparison</h3>
-              <p className="text-xs text-stone-500">Direct comparative matrix across all evaluation criteria</p>
+              <p className="text-xs text-stone-500">Comparative criteria values and scores</p>
             </div>
             <button
               onClick={() => setShowComparison(false)}
@@ -377,12 +459,12 @@ export const EvaluationView: React.FC = () => {
         </div>
       )}
 
-      {/* Human Winner Override Modal */}
+      {/* Human Override Modal */}
       {showOverrideModal && (
         <div className="fixed inset-0 bg-stone-900/40 backdrop-none flex items-center justify-center p-4 z-50">
           <div className="bg-white border border-stone-300 rounded max-w-lg w-full p-5 space-y-4">
             <div className="flex items-center justify-between border-b border-stone-200 pb-3">
-              <div className="flex items-center gap-2 text-status-warningText font-bold text-sm">
+              <div className="flex items-center gap-2 text-brand font-bold text-sm">
                 <AlertTriangle className="w-5 h-5" />
                 <span>Authorized Human Winner Override</span>
               </div>
