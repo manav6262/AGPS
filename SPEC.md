@@ -63,7 +63,7 @@ This mirrors **QCBS** (Quality-and-Cost-Based Selection) and aligns with GFR 201
 ```
 AGPS/
   server/        Express + engines
-  client/        React
+  frontend/        React
   shared/        TypeScript types shared by both
   SPEC.md  README.md
 ```
@@ -1005,7 +1005,7 @@ tests/  unit/ (engines, no DB)   integration/ (supertest + in-memory mongo)
 ## 25. Frontend structure
 
 ```
-client/src/
+frontend/src/
   components/  ui/ · tender/ · bid/ · evaluation/ · charts/
                ProvenanceBadge.tsx · ProvenanceDisclosure.tsx     [v3]
   pages/       auth/ · admin/ · vendor/ · auditor/

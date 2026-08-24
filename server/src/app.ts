@@ -10,6 +10,7 @@ import { env } from './config/env.js';
 import { authRouter } from './routes/authRoutes.js';
 import { bidRouter } from './routes/bidRoutes.js';
 import { tenderRouter } from './routes/tenderRoutes.js';
+import { vendorRouter } from './routes/vendorRoutes.js';
 import { authenticateToken, requireRole } from './middleware/auth.js';
 import { errorHandler } from './middleware/errorHandler.js';
 
@@ -51,6 +52,7 @@ app.get('/api/admin/dashboard', authenticateToken, requireRole('ADMIN'), (_req, 
 app.use('/api/auth', authRouter);
 app.use('/api/bids', bidRouter);
 app.use('/api/tenders', tenderRouter);
+app.use('/api/vendors', vendorRouter);
 
 // Central error handler (SPEC §17.4)
 app.use(errorHandler);

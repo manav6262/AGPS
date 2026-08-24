@@ -148,7 +148,7 @@ These are the failure modes to actively guard against.
 - **TypeScript throughout**, both sides, sharing `shared/types/`.
 - Backend: Express · Mongoose · Zod · Vitest + Supertest.
 - Frontend: React 18 · Vite · React Router v6 · Tailwind · TanStack Query · Recharts.
-- Commands must be `npm run dev`, `npm run seed`, `npm test` in both `server/` and `client/`.
+- Commands must be `npm run dev`, `npm run seed`, `npm test` in both `server/` and `frontend/`.
 - `.env.example` in both, with every variable documented.
 - Comments only where the *why* is non-obvious. The code should read like the surrounding code.
 - **No procurement logic in the client.** The frontend renders backend output; it never computes a score, rank, normalization, or rejection reason.

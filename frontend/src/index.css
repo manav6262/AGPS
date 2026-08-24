@@ -1,0 +1,61 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-stone-50 text-stone-800 font-sans text-sm;
+    color: #292524;
+    background-color: #FAFAF9;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply text-stone-900 font-semibold tracking-tight;
+  }
+
+  /* Compact institutional input defaults */
+  input, select, textarea {
+    @apply bg-white border border-stone-300 text-stone-800 rounded text-sm px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-brand focus:border-brand disabled:bg-stone-100 disabled:text-stone-500 disabled:cursor-not-allowed;
+  }
+
+  /* Dense institutional table formatting */
+  table {
+    @apply w-full text-left border-collapse;
+  }
+
+  th {
+    @apply bg-stone-100 text-stone-700 font-medium px-3 py-2 border-b border-stone-300 text-xs uppercase tracking-wider select-none;
+  }
+
+  td {
+    @apply px-3 py-2 border-b border-stone-200 text-stone-800 text-sm align-middle;
+  }
+
+  tr:hover td {
+    @apply bg-stone-100/60;
+  }
+}
+
+@layer components {
+  /* Institutional Buttons */
+  .btn-primary {
+    @apply inline-flex items-center justify-center font-medium bg-brand text-white hover:bg-brand-hover active:bg-brand px-3 py-1.5 rounded text-sm transition-colors border border-brand disabled:opacity-50 disabled:cursor-not-allowed shadow-none;
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center justify-center font-medium bg-white text-stone-800 hover:bg-stone-100 active:bg-stone-200 px-3 py-1.5 rounded text-sm transition-colors border border-stone-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-none;
+  }
+
+  .btn-danger {
+    @apply inline-flex items-center justify-center font-medium bg-white text-status-failedText hover:bg-status-failedBg px-3 py-1.5 rounded text-sm transition-colors border border-status-failedBorder disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  /* Institutional Panel / Card (Crisp 1px border, white background, no soft shadow) */
+  .gov-panel {
+    @apply bg-white border border-stone-300 rounded p-4;
+  }
+
+  .gov-panel-header {
+    @apply border-b border-stone-200 pb-3 mb-4 flex items-center justify-between;
+  }
+}
