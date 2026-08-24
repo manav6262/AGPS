@@ -69,7 +69,11 @@ export const VendorProfilePage: React.FC = () => {
   };
 
   if (loading) {
-    return <div className="p-8 text-center text-xs text-stone-500">Loading company profile...</div>;
+    return (
+      <div className="p-8 text-center text-xs text-stone-500 font-mono" role="status" aria-live="polite">
+        Loading supplier corporate profile...
+      </div>
+    );
   }
 
   return (
@@ -87,19 +91,22 @@ export const VendorProfilePage: React.FC = () => {
 
         <div className="flex items-center gap-2">
           <span className="text-xs text-stone-500">Data Provenance:</span>
-          <ProvenanceBadge status="SELF_REPORTED" source="PORTAL" />
+          <ProvenanceBadge
+            status={profile?.provenance?.verificationStatus || 'SELF_REPORTED'}
+            source={profile?.provenance?.source || 'PORTAL'}
+          />
         </div>
       </div>
 
       {success && (
-        <div className="p-3 bg-status-passedBg border border-status-passedBorder rounded-sm text-status-passedText text-xs flex items-center gap-2">
+        <div className="p-3 bg-status-passedBg border border-status-passedBorder rounded-sm text-status-passedText text-xs flex items-center gap-2" role="status" aria-live="polite">
           <CheckCircle2 className="w-4 h-4 shrink-0" />
           <span>{success}</span>
         </div>
       )}
 
       {error && (
-        <div className="p-3 bg-status-failedBg border border-status-failedBorder rounded-sm text-status-failedText text-xs flex items-center gap-2">
+        <div className="p-3 bg-status-failedBg border border-status-failedBorder rounded-sm text-status-failedText text-xs flex items-center gap-2" role="alert">
           <AlertCircle className="w-4 h-4 shrink-0" />
           <span>{error}</span>
         </div>
@@ -130,10 +137,11 @@ export const VendorProfilePage: React.FC = () => {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
             <div className="sm:col-span-2">
-              <label className="block text-xs font-medium text-stone-700 mb-1">
+              <label htmlFor="company-name-input" className="block text-xs font-medium text-stone-700 mb-1">
                 Company Legal Name *
               </label>
               <input
+                id="company-name-input"
                 type="text"
                 required
                 name="companyName"
@@ -144,10 +152,11 @@ export const VendorProfilePage: React.FC = () => {
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-stone-700 mb-1">
+              <label htmlFor="experience-years-input" className="block text-xs font-medium text-stone-700 mb-1">
                 Experience in Domain (Years) *
               </label>
               <input
+                id="experience-years-input"
                 type="number"
                 required
                 min={0}
@@ -160,28 +169,31 @@ export const VendorProfilePage: React.FC = () => {
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-stone-700 mb-1">
+              <label htmlFor="turnover-minor-input" className="block text-xs font-medium text-stone-700 mb-1">
                 Annual Turnover (Paise) *
               </label>
               <input
+                id="turnover-minor-input"
                 type="number"
                 required
                 min={0}
+                aria-describedby="turnover-help-text"
                 name="annualTurnoverMinor"
                 value={formData.annualTurnoverMinor}
                 onChange={handleChange}
                 className="w-full text-xs font-mono"
               />
-              <span className="text-[11px] text-stone-500 mt-0.5 block">
-                ₹{(formData.annualTurnoverMinor / 100).toLocaleString('en-IN')} INR
+              <span id="turnover-help-text" className="text-[11px] text-stone-500 mt-0.5 block">
+                Turnover: ₹{(formData.annualTurnoverMinor / 100).toLocaleString('en-IN')} INR
               </span>
             </div>
 
             <div className="sm:col-span-2">
-              <label className="block text-xs font-medium text-stone-700 mb-1">
+              <label htmlFor="contact-phone-input" className="block text-xs font-medium text-stone-700 mb-1">
                 Official Contact Phone *
               </label>
               <input
+                id="contact-phone-input"
                 type="tel"
                 required
                 name="contactPhone"
@@ -192,10 +204,11 @@ export const VendorProfilePage: React.FC = () => {
             </div>
 
             <div className="sm:col-span-2">
-              <label className="block text-xs font-medium text-stone-700 mb-1">
+              <label htmlFor="company-address-input" className="block text-xs font-medium text-stone-700 mb-1">
                 Registered Corporate Address *
               </label>
               <textarea
+                id="company-address-input"
                 required
                 rows={2}
                 name="address"

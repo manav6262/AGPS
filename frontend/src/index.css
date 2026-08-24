@@ -13,6 +13,12 @@
     @apply text-stone-900 font-semibold tracking-tight;
   }
 
+  /* Visible focus ring throughout for keyboard accessibility */
+  :focus-visible {
+    outline: 2px solid #9A3412 !important;
+    outline-offset: 2px !important;
+  }
+
   /* Compact institutional input defaults */
   input, select, textarea {
     @apply bg-white border border-stone-300 text-stone-800 rounded text-sm px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-brand focus:border-brand disabled:bg-stone-100 disabled:text-stone-500 disabled:cursor-not-allowed;
@@ -34,20 +40,24 @@
   tr:hover td {
     @apply bg-stone-100/60;
   }
+
+  caption {
+    @apply text-left text-xs text-stone-500 py-1 font-mono sr-only;
+  }
 }
 
 @layer components {
   /* Institutional Buttons */
   .btn-primary {
-    @apply inline-flex items-center justify-center font-medium bg-brand text-white hover:bg-brand-hover active:bg-brand px-3 py-1.5 rounded text-sm transition-colors border border-brand disabled:opacity-50 disabled:cursor-not-allowed shadow-none;
+    @apply inline-flex items-center justify-center font-medium bg-brand text-white hover:bg-brand-hover active:bg-brand px-3 py-1.5 rounded text-sm transition-colors border border-brand disabled:opacity-50 disabled:cursor-not-allowed shadow-none focus:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2;
   }
 
   .btn-secondary {
-    @apply inline-flex items-center justify-center font-medium bg-white text-stone-800 hover:bg-stone-100 active:bg-stone-200 px-3 py-1.5 rounded text-sm transition-colors border border-stone-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-none;
+    @apply inline-flex items-center justify-center font-medium bg-white text-stone-800 hover:bg-stone-100 active:bg-stone-200 px-3 py-1.5 rounded text-sm transition-colors border border-stone-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-none focus:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2;
   }
 
   .btn-danger {
-    @apply inline-flex items-center justify-center font-medium bg-white text-status-failedText hover:bg-status-failedBg px-3 py-1.5 rounded text-sm transition-colors border border-status-failedBorder disabled:opacity-50 disabled:cursor-not-allowed;
+    @apply inline-flex items-center justify-center font-medium bg-white text-status-failedText hover:bg-status-failedBg px-3 py-1.5 rounded text-sm transition-colors border border-status-failedBorder disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus-visible:ring-2 focus-visible:ring-status-failedBorder focus-visible:ring-offset-2;
   }
 
   /* Institutional Panel / Card (Crisp 1px border, white background, no soft shadow) */
@@ -57,5 +67,10 @@
 
   .gov-panel-header {
     @apply border-b border-stone-200 pb-3 mb-4 flex items-center justify-between;
+  }
+
+  /* Empty State Containers with Action Guidance */
+  .empty-state-box {
+    @apply bg-white border border-dashed border-stone-300 rounded p-8 text-center space-y-2;
   }
 }

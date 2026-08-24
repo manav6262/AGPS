@@ -33,7 +33,6 @@ export const AuditLogs: React.FC = () => {
     async function loadAuditForTender() {
       if (!selectedTenderId) return;
       try {
-        // Fetch explainability report or audit entries for this tender
         const res = await fetch(`/api/tenders/${selectedTenderId}/explainability`, {
           headers: {
             'Content-Type': 'application/json',
@@ -41,7 +40,6 @@ export const AuditLogs: React.FC = () => {
           },
         }).then((r) => r.json()).catch(() => null);
 
-        // Simulation / preview of audit chain entries
         const dummyChain = [
           {
             seq: 1,
@@ -105,9 +103,12 @@ export const AuditLogs: React.FC = () => {
 
       {/* Tender Selector */}
       <div className="bg-white border border-stone-300 rounded p-3 flex items-center gap-3">
-        <Search className="w-4 h-4 text-stone-400 shrink-0" />
-        <label className="text-xs font-medium text-stone-700 whitespace-nowrap">Select Tender Dossier:</label>
+        <Search className="w-4 h-4 text-stone-400 shrink-0" aria-hidden="true" />
+        <label htmlFor="audit-tender-select" className="text-xs font-medium text-stone-700 whitespace-nowrap">
+          Select Tender Dossier:
+        </label>
         <select
+          id="audit-tender-select"
           value={selectedTenderId}
           onChange={(e) => setSelectedTenderId(e.target.value)}
           className="w-full text-xs font-mono"
@@ -130,19 +131,22 @@ export const AuditLogs: React.FC = () => {
         </div>
 
         {loading ? (
-          <div className="p-8 text-center text-xs text-stone-500">Verifying audit chain...</div>
+          <div className="p-8 text-center text-xs text-stone-500 font-mono" role="status" aria-live="polite">
+            Verifying cryptographic audit chain...
+          </div>
         ) : (
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto" tabIndex={0} role="region" aria-label="Cryptographic Audit Hash Chain Records Table">
             <table>
+              <caption className="sr-only">Sequential Cryptographic Audit Trail</caption>
               <thead>
                 <tr>
-                  <th>Seq #</th>
-                  <th>Action</th>
-                  <th>Actor Role</th>
-                  <th>Description</th>
-                  <th>Previous SHA-256 Hash</th>
-                  <th>Current Entry SHA-256 Hash</th>
-                  <th>Timestamp</th>
+                  <th scope="col" className="text-center">Seq #</th>
+                  <th scope="col">Action</th>
+                  <th scope="col">Actor Role</th>
+                  <th scope="col">Description</th>
+                  <th scope="col">Previous SHA-256 Hash</th>
+                  <th scope="col">Current Entry SHA-256 Hash</th>
+                  <th scope="col">Timestamp</th>
                 </tr>
               </thead>
               <tbody>

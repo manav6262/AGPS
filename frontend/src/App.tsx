@@ -12,13 +12,18 @@ import { EvaluationView } from './pages/EvaluationView.js';
 import { VendorBids } from './pages/VendorBids.js';
 import { VendorProfilePage } from './pages/VendorProfilePage.js';
 import { AuditLogs } from './pages/AuditLogs.js';
+import { ErrorBoundary } from './components/common/ErrorBoundary.js';
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { isAuthenticated, isLoading } = useAuth();
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-stone-50 text-xs text-stone-500 font-mono">
+      <div
+        className="min-h-screen flex items-center justify-center bg-stone-50 text-xs text-stone-500 font-mono"
+        role="status"
+        aria-live="polite"
+      >
         Authenticating session...
       </div>
     );
@@ -33,8 +38,9 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
 
 export const App: React.FC = () => {
   return (
-    <AuthProvider>
-      <BrowserRouter>
+    <ErrorBoundary>
+      <AuthProvider>
+        <BrowserRouter>
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
@@ -61,6 +67,7 @@ export const App: React.FC = () => {
         </Routes>
       </BrowserRouter>
     </AuthProvider>
+    </ErrorBoundary>
   );
 };
 export default App;

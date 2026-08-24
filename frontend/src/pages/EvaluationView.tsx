@@ -91,11 +91,22 @@ export const EvaluationView: React.FC = () => {
   };
 
   if (loading) {
-    return <div className="p-8 text-center text-xs text-stone-500">Generating SAW explainability report...</div>;
+    return (
+      <div className="p-8 text-center text-xs text-stone-500 font-mono" role="status" aria-live="polite">
+        Generating SAW explainability report...
+      </div>
+    );
   }
 
   if (!report) {
-    return <div className="p-8 text-center text-xs text-status-failedText">Explainability report unavailable.</div>;
+    return (
+      <div className="p-8 text-center space-y-3">
+        <div className="text-xs text-status-failedText font-bold">Explainability report unavailable.</div>
+        <Link to="/tenders" className="btn-secondary text-xs">
+          Return to Registry
+        </Link>
+      </div>
+    );
   }
 
   const eligibleResults = report.results?.filter((r: any) => r.eligible) || [];
@@ -154,14 +165,14 @@ export const EvaluationView: React.FC = () => {
       </div>
 
       {actionSuccess && (
-        <div className="p-3 bg-status-passedBg border border-status-passedBorder rounded-sm text-status-passedText text-xs flex items-center gap-2">
+        <div className="p-3 bg-status-passedBg border border-status-passedBorder rounded-sm text-status-passedText text-xs flex items-center gap-2" role="status" aria-live="polite">
           <CheckCircle2 className="w-4 h-4 shrink-0" />
           <span>{actionSuccess}</span>
         </div>
       )}
 
       {error && (
-        <div className="p-3 bg-status-failedBg border border-status-failedBorder rounded-sm text-status-failedText text-xs flex items-center gap-2">
+        <div className="p-3 bg-status-failedBg border border-status-failedBorder rounded-sm text-status-failedText text-xs flex items-center gap-2" role="alert">
           <XCircle className="w-4 h-4 shrink-0" />
           <span>{error}</span>
         </div>
@@ -208,8 +219,12 @@ export const EvaluationView: React.FC = () => {
       )}
 
       {/* Analytical Tab Navigation */}
-      <div className="border-b border-stone-300 flex space-x-2">
+      <div className="border-b border-stone-300 flex space-x-2" role="tablist" aria-label="Evaluation Analysis Views">
         <button
+          role="tab"
+          id="tab-matrix"
+          aria-controls="panel-matrix"
+          aria-selected={activeTab === 'MATRIX'}
           onClick={() => setActiveTab('MATRIX')}
           className={`px-3 py-2 text-xs font-semibold border-b-2 flex items-center gap-1.5 transition-colors ${
             activeTab === 'MATRIX'
@@ -222,6 +237,10 @@ export const EvaluationView: React.FC = () => {
         </button>
 
         <button
+          role="tab"
+          id="tab-sensitivity"
+          aria-controls="panel-sensitivity"
+          aria-selected={activeTab === 'SENSITIVITY'}
           onClick={() => setActiveTab('SENSITIVITY')}
           className={`px-3 py-2 text-xs font-semibold border-b-2 flex items-center gap-1.5 transition-colors ${
             activeTab === 'SENSITIVITY'
@@ -234,6 +253,10 @@ export const EvaluationView: React.FC = () => {
         </button>
 
         <button
+          role="tab"
+          id="tab-breakeven"
+          aria-controls="panel-breakeven"
+          aria-selected={activeTab === 'BREAKEVEN'}
           onClick={() => setActiveTab('BREAKEVEN')}
           className={`px-3 py-2 text-xs font-semibold border-b-2 flex items-center gap-1.5 transition-colors ${
             activeTab === 'BREAKEVEN'
@@ -246,6 +269,10 @@ export const EvaluationView: React.FC = () => {
         </button>
 
         <button
+          role="tab"
+          id="tab-robustness"
+          aria-controls="panel-robustness"
+          aria-selected={activeTab === 'ROBUSTNESS'}
           onClick={() => setActiveTab('ROBUSTNESS')}
           className={`px-3 py-2 text-xs font-semibold border-b-2 flex items-center gap-1.5 transition-colors ${
             activeTab === 'ROBUSTNESS'
@@ -260,7 +287,7 @@ export const EvaluationView: React.FC = () => {
 
       {/* Tab 1: SAW Scoring Matrix */}
       {activeTab === 'MATRIX' && (
-        <div className="space-y-6">
+        <div id="panel-matrix" role="tabpanel" aria-labelledby="tab-matrix" className="space-y-6">
           <div className="gov-panel p-0 overflow-hidden">
             <div className="p-3 border-b border-stone-200 bg-stone-50 flex items-center justify-between">
               <h2 className="text-xs font-bold text-stone-800 uppercase tracking-wider">
@@ -272,23 +299,26 @@ export const EvaluationView: React.FC = () => {
             </div>
 
             {eligibleResults.length === 0 ? (
-              <div className="p-6 text-center text-xs text-stone-500">No eligible bids ranked.</div>
+              <div className="p-6 text-center text-xs text-stone-500" role="status" aria-live="polite">
+                No eligible bids ranked.
+              </div>
             ) : (
-              <div className="overflow-x-auto">
+              <div className="overflow-x-auto" tabIndex={0} role="region" aria-label="SAW Ranking Matrix Table">
                 <table>
+                  <caption className="sr-only">Official SAW Composite Scoring Table</caption>
                   <thead>
                     <tr>
-                      <th>Rank</th>
-                      <th>Vendor Name & Bid</th>
+                      <th scope="col">Rank</th>
+                      <th scope="col">Vendor Name & Bid</th>
                       {report.scoringCriteria?.map((c: any) => (
-                        <th key={c.key} className="text-center">
+                        <th scope="col" key={c.key} className="text-center">
                           <div>{c.label}</div>
                           <div className="text-[10px] text-stone-500 font-normal">
                             ({c.weight}% • {c.direction})
                           </div>
                         </th>
                       ))}
-                      <th className="text-right font-bold">Final Score</th>
+                      <th scope="col" className="text-right font-bold">Final Score</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -323,7 +353,7 @@ export const EvaluationView: React.FC = () => {
                               </div>
                               <div className="mt-0.5">
                                 <ProvenanceBadge
-                                  status={item?.provenance?.status || 'UNVERIFIED'}
+                                  status={item?.provenance?.verificationStatus || 'UNVERIFIED'}
                                   source={item?.provenance?.source}
                                 />
                               </div>
@@ -350,14 +380,15 @@ export const EvaluationView: React.FC = () => {
                 </h2>
                 <span className="text-[11px] text-stone-500">Excluded from normalization and ranking</span>
               </div>
-              <div className="overflow-x-auto">
+              <div className="overflow-x-auto" tabIndex={0} role="region" aria-label="Disqualified Bids Table">
                 <table>
+                  <caption className="sr-only">Disqualified Bids List</caption>
                   <thead>
                     <tr>
-                      <th>Vendor Name</th>
-                      <th>Bid ID</th>
-                      <th>Failed Eligibility Rules</th>
-                      <th>Disqualification Rationale</th>
+                      <th scope="col">Vendor Name</th>
+                      <th scope="col">Bid ID</th>
+                      <th scope="col">Failed Eligibility Rules</th>
+                      <th scope="col">Disqualification Rationale</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -383,29 +414,35 @@ export const EvaluationView: React.FC = () => {
 
       {/* Tab 2: Sensitivity Simulator */}
       {activeTab === 'SENSITIVITY' && (
-        <SensitivitySimulator
-          tenderId={id!}
-          originalResults={report.results || []}
-          originalCriteria={report.scoringCriteria || []}
-        />
+        <div id="panel-sensitivity" role="tabpanel" aria-labelledby="tab-sensitivity">
+          <SensitivitySimulator
+            tenderId={id!}
+            originalResults={report.results || []}
+            originalCriteria={report.scoringCriteria || []}
+          />
+        </div>
       )}
 
       {/* Tab 3: Breakeven Calculator */}
       {activeTab === 'BREAKEVEN' && (
-        <BreakevenCalculator
-          tenderId={id!}
-          results={report.results || []}
-          criteria={report.scoringCriteria || []}
-        />
+        <div id="panel-breakeven" role="tabpanel" aria-labelledby="tab-breakeven">
+          <BreakevenCalculator
+            tenderId={id!}
+            results={report.results || []}
+            criteria={report.scoringCriteria || []}
+          />
+        </div>
       )}
 
       {/* Tab 4: Robustness Summary */}
       {activeTab === 'ROBUSTNESS' && (
-        <RobustnessSummary
-          tenderId={id!}
-          results={report.results || []}
-          criteria={report.scoringCriteria || []}
-        />
+        <div id="panel-robustness" role="tabpanel" aria-labelledby="tab-robustness">
+          <RobustnessSummary
+            tenderId={id!}
+            results={report.results || []}
+            criteria={report.scoringCriteria || []}
+          />
+        </div>
       )}
 
       {/* Side-by-Side Comparison Modal */}
@@ -418,20 +455,21 @@ export const EvaluationView: React.FC = () => {
             </div>
             <button
               onClick={() => setShowComparison(false)}
-              className="text-xs text-stone-500 hover:text-stone-800"
+              className="text-xs text-stone-500 hover:text-stone-800 font-medium"
             >
               Close Comparison
             </button>
           </div>
 
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto" tabIndex={0} role="region" aria-label="Side-by-Side Comparison Matrix">
             <table>
+              <caption className="sr-only">Side-by-Side Comparative Scoring Matrix</caption>
               <thead>
                 <tr>
-                  <th>Criterion</th>
-                  <th>Weight</th>
+                  <th scope="col">Criterion</th>
+                  <th scope="col">Weight</th>
                   {comparisonData.comparedBids?.map((b: any) => (
-                    <th key={b.bidId} className="text-center">
+                    <th scope="col" key={b.bidId} className="text-center">
                       <div>{b.vendorName}</div>
                       <div className="font-mono text-[10px] text-stone-500">
                         Rank #{b.rank} • Score: {b.finalScore?.toFixed(2)}
@@ -474,16 +512,23 @@ export const EvaluationView: React.FC = () => {
 
       {/* Human Override Modal */}
       {showOverrideModal && (
-        <div className="fixed inset-0 bg-stone-900/40 backdrop-none flex items-center justify-center p-4 z-50">
+        <div
+          className="fixed inset-0 bg-stone-900/50 flex items-center justify-center p-4 z-50"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="override-modal-title"
+        >
           <div className="bg-white border border-stone-300 rounded max-w-lg w-full p-5 space-y-4">
             <div className="flex items-center justify-between border-b border-stone-200 pb-3">
-              <div className="flex items-center gap-2 text-brand font-bold text-sm">
+              <div className="flex items-center gap-2 text-brand font-bold text-sm" id="override-modal-title">
                 <AlertTriangle className="w-5 h-5" />
                 <span>Authorized Human Winner Override</span>
               </div>
               <button
+                type="button"
                 onClick={() => setShowOverrideModal(false)}
-                className="text-stone-400 hover:text-stone-700 text-sm"
+                className="text-stone-400 hover:text-stone-700 text-sm font-bold"
+                aria-label="Close dialog"
               >
                 ✕
               </button>
@@ -498,10 +543,11 @@ export const EvaluationView: React.FC = () => {
 
             <form onSubmit={handleOverrideSubmit} className="space-y-3">
               <div>
-                <label className="block text-xs font-medium text-stone-700 mb-1">
+                <label htmlFor="override-target-bid" className="block text-xs font-medium text-stone-700 mb-1">
                   Select Target Eligible Bid *
                 </label>
                 <select
+                  id="override-target-bid"
                   required
                   value={selectedOverrideBidId}
                   onChange={(e) => setSelectedOverrideBidId(e.target.value)}
@@ -517,19 +563,21 @@ export const EvaluationView: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-stone-700 mb-1">
+                <label htmlFor="override-justification-input" className="block text-xs font-medium text-stone-700 mb-1">
                   Mandatory Justification & Statutory Rationale *
                 </label>
                 <textarea
+                  id="override-justification-input"
                   required
                   minLength={10}
                   rows={3}
+                  aria-describedby="override-justification-count"
                   value={overrideJustification}
                   onChange={(e) => setOverrideJustification(e.target.value)}
                   placeholder="Explain why the recommended winner is overridden (e.g. specialized maintenance warranty, critical delivery SLA)..."
                   className="w-full text-xs"
                 />
-                <span className="text-[11px] text-stone-500">
+                <span id="override-justification-count" className="text-[11px] text-stone-500">
                   {overrideJustification.length}/10 characters minimum
                 </span>
               </div>
