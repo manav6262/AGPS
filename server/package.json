@@ -8,7 +8,7 @@
     "test": "vitest run",
     "lint": "eslint \"src/**/*.ts\"",
     "dev": "tsx watch src/server.ts",
-    "seed": "tsx src/seed/index.ts"
+    "seed": "node --import tsx src/seed/index.ts"
   },
   "dependencies": {
     "@agps/shared": "*",
