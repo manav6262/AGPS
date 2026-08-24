@@ -7,6 +7,7 @@ import {
   transitionTenderHandler,
 } from '../controllers/tenderController.js';
 import { submitBidHandler, getTenderBidsHandler } from '../controllers/bidController.js';
+import { evaluateTenderHandler, getTenderEvaluationHandler } from '../controllers/evaluationController.js';
 import { authenticateToken, requireRole } from '../middleware/auth.js';
 
 export const tenderRouter = Router();
@@ -20,3 +21,7 @@ tenderRouter.post('/:id/transition', authenticateToken, requireRole('ADMIN'), tr
 // Bid submission & listing (SPEC §23)
 tenderRouter.post('/:id/bids', authenticateToken, requireRole('VENDOR'), submitBidHandler);
 tenderRouter.get('/:id/bids', authenticateToken, getTenderBidsHandler);
+
+// Evaluation (SPEC §23)
+tenderRouter.post('/:id/evaluate', authenticateToken, requireRole('ADMIN'), evaluateTenderHandler);
+tenderRouter.get('/:id/evaluation', authenticateToken, getTenderEvaluationHandler);

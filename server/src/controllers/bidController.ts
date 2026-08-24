@@ -42,6 +42,7 @@ export async function getMyBidsHandler(
 ): Promise<void> {
   try {
     const bids = await Bid.find({ vendor: new Types.ObjectId(req.user!.id) })
+      .select('+priceMinor')
       .sort({ submittedAt: -1 })
       .populate('tender', 'tenderCode title status deadlineAt')
       .exec();
@@ -71,7 +72,14 @@ export async function getBidById(req: Request, res: Response, next: NextFunction
         ? { _id: new Types.ObjectId(id), vendor: new Types.ObjectId(req.user.id) }
         : { _id: new Types.ObjectId(id) };
 
-    const bid = await Bid.findOne(filter).exec();
+    const query = Bid.findOne(filter).populate('tender', 'status');
+
+    // Vendors can always see their own price; Admin/Auditor only if unsealed
+    if (req.user.role === 'VENDOR') {
+      query.select('+priceMinor');
+    }
+
+    const bid = await query.exec();
 
     if (!bid) {
       // Return 404 (does not leak existence of other vendors' bids)
@@ -80,6 +88,24 @@ export async function getBidById(req: Request, res: Response, next: NextFunction
         message: 'Bid not found',
       });
       return;
+    }
+
+    // If Admin/Auditor requests bid, check if tender is unsealed
+    if (req.user.role !== 'VENDOR') {
+      const tenderStatus = (bid.tender as any)?.status;
+      const unsealedStatuses = [
+        'FINANCIAL_OPEN',
+        'UNDER_EVALUATION',
+        'EVALUATED',
+        'WINNER_SELECTED',
+        'CLOSED',
+      ];
+      if (unsealedStatuses.includes(tenderStatus)) {
+        // Fetch price
+        const withPrice = await Bid.findById(bid._id).select('+priceMinor').populate('tender', 'status').exec();
+        res.status(200).json({ bid: withPrice });
+        return;
+      }
     }
 
     res.status(200).json({ bid });

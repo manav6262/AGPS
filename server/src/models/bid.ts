@@ -93,11 +93,12 @@ const bidSchema = new Schema<IBid>(
       provenance: { type: ProvenanceSchema, default: () => ({ ...DEFAULT_PROVENANCE }) },
     },
 
-    // Financial envelope
+    // Financial envelope (SPEC §17.4 — sealed by default)
     priceMinor: {
       type: Number,
       required: true,
       min: 1, // positive integer paise (SPEC §11.2, Invariant 5)
+      select: false, // Default-excluded; must opt in explicitly with +priceMinor
     },
 
     // Derived, stored

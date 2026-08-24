@@ -174,17 +174,14 @@ export async function getBidsForTender(
   // VENDOR can never see other vendors' bids (SPEC §4, §17.2)
   if (user.role === 'VENDOR') {
     return Bid.find({ tender: tender._id, vendor: new Types.ObjectId(user.id) })
+      .select('+priceMinor')
       .sort({ submittedAt: -1 })
       .exec();
   }
 
   // ADMIN / AUDITOR querying bids
-  const bids = await Bid.find({ tender: tender._id, isLatest: true })
-    .populate('vendor', 'name email')
-    .exec();
-
-  // Two-Envelope Price Sealing (SPEC §14.3, Test 34)
-  // Price is SEALED and stripped until FINANCIAL_OPEN or later
+  // Two-Envelope Price Sealing (SPEC §14.3, §17.4, Test 34)
+  // Price is select: false by default at schema level; opt in explicitly only if unsealed
   const unsealedStatuses = [
     'FINANCIAL_OPEN',
     'UNDER_EVALUATION',
@@ -194,16 +191,19 @@ export async function getBidsForTender(
   ];
   const isFinancialUnsealed = unsealedStatuses.includes(tender.status);
 
+  const query = Bid.find({ tender: tender._id, isLatest: true }).populate('vendor', 'name email');
+
+  if (isFinancialUnsealed) {
+    query.select('+priceMinor');
+  }
+
+  const bids = await query.exec();
+
   if (!isFinancialUnsealed) {
-    return bids.map((b) => {
-      const plain = b.toObject();
-      delete (plain as any).priceMinor; // Service-layer projection: strip price completely
-      return {
-        ...plain,
-        priceMinor: undefined,
-        isPriceSealed: true,
-      };
-    });
+    return bids.map((b) => ({
+      ...b.toObject(),
+      isPriceSealed: true,
+    }));
   }
 
   return bids;
