@@ -1,0 +1,45 @@
+{
+  "root": true,
+  "parser": "@typescript-eslint/parser",
+  "plugins": ["@typescript-eslint"],
+  "extends": [
+    "eslint:recommended",
+    "plugin:@typescript-eslint/recommended"
+  ],
+  "rules": {
+    "@typescript-eslint/no-explicit-any": "off",
+    "@typescript-eslint/no-unused-vars": ["warn", { "argsIgnorePattern": "^_" }]
+  },
+  "overrides": [
+    {
+      "files": ["src/engines/**/*.ts"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "paths": [
+              {
+                "name": "express",
+                "message": "Pure engines cannot import from express (SPEC §24)."
+              },
+              {
+                "name": "mongoose",
+                "message": "Pure engines cannot import from mongoose (SPEC §24)."
+              }
+            ],
+            "patterns": [
+              {
+                "group": ["**/models/**", "**/models", "../*/models/**", "../models/**", "./models/**"],
+                "message": "Pure engines cannot import from models (SPEC §24)."
+              },
+              {
+                "group": ["express", "express/**", "mongoose", "mongoose/**"],
+                "message": "Pure engines cannot import from express or mongoose (SPEC §24)."
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}
