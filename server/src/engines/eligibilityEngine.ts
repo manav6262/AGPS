@@ -84,11 +84,12 @@ function evaluateOperator(operator: RuleOperator, actual: unknown, required: unk
 
 export function evaluateEligibility(
   context: BidContext,
-  rules: EligibilityRule[]
+  rules: EligibilityRule[] = []
 ): EligibilityResult {
   const failedRules: FailedRule[] = [];
+  const safeRules = Array.isArray(rules) ? rules : [];
 
-  for (const rule of rules) {
+  for (const rule of safeRules) {
     if (!rule.enabled) {
       continue;
     }
