@@ -18,6 +18,7 @@ import {
   Sliders,
   Target,
   Activity,
+  Download,
 } from 'lucide-react';
 
 export const EvaluationView: React.FC = () => {
@@ -122,6 +123,15 @@ export const EvaluationView: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-2">
+          <button
+            onClick={() => api.tenders.downloadReportCsv(id!)}
+            className="btn-secondary text-xs flex items-center gap-1.5"
+            title="Download complete evaluation dossier with provenance disclosure as CSV"
+          >
+            <Download className="w-3.5 h-3.5 text-brand" />
+            <span>Export Report (CSV)</span>
+          </button>
+
           <button
             onClick={handleFetchComparison}
             disabled={eligibleResults.length < 2}
@@ -374,14 +384,16 @@ export const EvaluationView: React.FC = () => {
       {/* Tab 2: Sensitivity Simulator */}
       {activeTab === 'SENSITIVITY' && (
         <SensitivitySimulator
-          results={report.results || []}
-          criteria={report.scoringCriteria || []}
+          tenderId={id!}
+          originalResults={report.results || []}
+          originalCriteria={report.scoringCriteria || []}
         />
       )}
 
       {/* Tab 3: Breakeven Calculator */}
       {activeTab === 'BREAKEVEN' && (
         <BreakevenCalculator
+          tenderId={id!}
           results={report.results || []}
           criteria={report.scoringCriteria || []}
         />
@@ -390,6 +402,7 @@ export const EvaluationView: React.FC = () => {
       {/* Tab 4: Robustness Summary */}
       {activeTab === 'ROBUSTNESS' && (
         <RobustnessSummary
+          tenderId={id!}
           results={report.results || []}
           criteria={report.scoringCriteria || []}
         />

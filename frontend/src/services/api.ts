@@ -162,6 +162,37 @@ export const api = {
       request(`/tenders/${id}/explainability`),
     compareBids: (id: string, bidIds: string[]) =>
       request(`/tenders/${id}/compare?bidIds=${bidIds.join(',')}`),
+    simulate: (id: string, criteria: any[]) =>
+      request(`/tenders/${id}/simulate`, {
+        method: 'POST',
+        body: JSON.stringify({ criteria }),
+      }),
+    getBreakeven: (id: string) =>
+      request(`/tenders/${id}/breakeven`),
+    downloadReportCsv: async (id: string) => {
+      const token = getAccessToken();
+      const res = await fetch(`${API_BASE}/tenders/${id}/report.csv`, {
+        headers: {
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+      });
+      if (!res.ok) throw new Error('Failed to download CSV report');
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `tender-${id}-report.csv`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    },
+  },
+
+  // Dashboard
+  dashboard: {
+    getSummary: () =>
+      request('/dashboard/summary'),
   },
 
   // Bids

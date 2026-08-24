@@ -15,6 +15,11 @@ import {
   getExplainabilityHandler,
   compareBidsHandler,
 } from '../controllers/awardController.js';
+import {
+  simulateHandler,
+  breakevenHandler,
+  reportCsvHandler,
+} from '../controllers/sensitivityController.js';
 import { authenticateToken, requireRole } from '../middleware/auth.js';
 
 export const tenderRouter = Router();
@@ -41,3 +46,8 @@ tenderRouter.post('/:id/close', authenticateToken, requireRole('ADMIN'), closeTe
 // Explainability & Bid Comparison (SPEC §15.4, §15.5, §23)
 tenderRouter.get('/:id/explainability', authenticateToken, getExplainabilityHandler);
 tenderRouter.get('/:id/compare', authenticateToken, compareBidsHandler);
+
+// Sensitivity Simulation, Breakeven & CSV Export (SPEC §13, §14.5, §18, §23)
+tenderRouter.post('/:id/simulate', authenticateToken, requireRole('ADMIN', 'AUDITOR'), simulateHandler);
+tenderRouter.get('/:id/breakeven', authenticateToken, requireRole('ADMIN', 'AUDITOR'), breakevenHandler);
+tenderRouter.get('/:id/report.csv', authenticateToken, requireRole('ADMIN', 'AUDITOR'), reportCsvHandler);

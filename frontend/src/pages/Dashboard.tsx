@@ -9,15 +9,22 @@ import { FileText, ShieldCheck, PlusCircle, CheckCircle2, ArrowRight } from 'luc
 export const Dashboard: React.FC = () => {
   const { user, vendorProfile } = useAuth();
   const [tenders, setTenders] = useState<ITender[]>([]);
+  const [summary, setSummary] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function loadData() {
       try {
-        const res = await api.tenders.list();
-        setTenders(res.tenders || []);
+        const [tendersRes, summaryRes] = await Promise.all([
+          api.tenders.list(),
+          api.dashboard.getSummary().catch(() => null),
+        ]);
+        setTenders(tendersRes.tenders || []);
+        if (summaryRes?.summary) {
+          setSummary(summaryRes.summary);
+        }
       } catch (err) {
-        console.error('Failed to load dashboard tenders', err);
+        console.error('Failed to load dashboard data', err);
       } finally {
         setLoading(false);
       }
@@ -25,10 +32,10 @@ export const Dashboard: React.FC = () => {
     loadData();
   }, []);
 
-  const publishedCount = tenders.filter((t) => t.status === 'PUBLISHED' || t.status === 'BIDDING_OPEN').length;
-  const evaluatedCount = tenders.filter((t) => t.status === 'EVALUATED' || t.status === 'WINNER_SELECTED').length;
-  const closedCount = tenders.filter((t) => t.status === 'CLOSED').length;
-  const draftCount = tenders.filter((t) => t.status === 'DRAFT').length;
+  const publishedCount = summary ? summary.activeTenders : tenders.filter((t) => t.status === 'PUBLISHED' || t.status === 'BIDDING_OPEN').length;
+  const evaluatedCount = summary ? summary.evaluatedTenders : tenders.filter((t) => t.status === 'EVALUATED' || t.status === 'WINNER_SELECTED').length;
+  const closedCount = summary ? summary.closedTenders : tenders.filter((t) => t.status === 'CLOSED').length;
+  const totalBidsCount = summary ? summary.totalBids : 0;
 
   return (
     <div className="space-y-6">
@@ -100,10 +107,10 @@ export const Dashboard: React.FC = () => {
 
         <div className="gov-panel p-3">
           <span className="text-[11px] text-stone-500 uppercase tracking-wider font-medium">
-            {user?.role === 'ADMIN' ? 'Draft Notices' : 'System Integrity'}
+            Total Bids Submitted
           </span>
           <div className="text-2xl font-bold text-stone-900 mt-1 font-mono">
-            {user?.role === 'ADMIN' ? draftCount : '100%'}
+            {totalBidsCount}
           </div>
           <span className="text-[11px] text-brand flex items-center gap-1 mt-1 font-mono">
             <ShieldCheck className="w-3.5 h-3.5" /> SHA-256 Verified

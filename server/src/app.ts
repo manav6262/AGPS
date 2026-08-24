@@ -11,6 +11,7 @@ import { authRouter } from './routes/authRoutes.js';
 import { bidRouter } from './routes/bidRoutes.js';
 import { tenderRouter } from './routes/tenderRoutes.js';
 import { vendorRouter } from './routes/vendorRoutes.js';
+import { dashboardSummaryHandler } from './controllers/sensitivityController.js';
 import { authenticateToken, requireRole } from './middleware/auth.js';
 import { errorHandler } from './middleware/errorHandler.js';
 
@@ -47,6 +48,9 @@ app.get('/api/health', (_req, res) => {
 app.get('/api/admin/dashboard', authenticateToken, requireRole('ADMIN'), (_req, res) => {
   res.status(200).json({ message: 'Welcome Admin' });
 });
+
+// Dashboard Summary endpoint
+app.get('/api/dashboard/summary', authenticateToken, dashboardSummaryHandler);
 
 // Mount Routes
 app.use('/api/auth', authRouter);

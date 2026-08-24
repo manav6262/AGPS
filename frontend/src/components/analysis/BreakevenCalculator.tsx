@@ -1,37 +1,51 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ScoringCriterion, RankedResult } from '@agps/shared';
-import { calculateBreakevenRequirements } from '../../utils/sensitivity.js';
+import { api } from '../../services/api.js';
 import { Target, CheckCircle2, XCircle } from 'lucide-react';
 
 interface BreakevenCalculatorProps {
+  tenderId: string;
   results: RankedResult[];
   criteria: ScoringCriterion[];
 }
 
 export const BreakevenCalculator: React.FC<BreakevenCalculatorProps> = ({
+  tenderId,
   results,
   criteria,
 }) => {
-  const eligible = useMemo(() => results.filter((r) => r.eligible), [results]);
-  const winner = useMemo(() => eligible.find((r) => r.rank === 1), [eligible]);
+  const [breakevenData, setBreakevenData] = useState<any | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // Non-winning bids
-  const nonWinners = useMemo(() => eligible.filter((r) => r.rank !== 1), [eligible]);
-
+  const eligible = results.filter((r) => r.eligible);
+  const nonWinners = eligible.filter((r) => r.rank !== 1);
   const [selectedBidId, setSelectedBidId] = useState<string>(nonWinners[0]?.bidId || '');
 
-  const targetBid = useMemo(() => {
-    return eligible.find((r) => r.bidId === selectedBidId) || nonWinners[0];
-  }, [eligible, nonWinners, selectedBidId]);
+  useEffect(() => {
+    async function loadBreakeven() {
+      try {
+        setLoading(true);
+        const res = await api.tenders.getBreakeven(tenderId);
+        setBreakevenData(res.breakeven);
+      } catch (err: any) {
+        setError(err.message || 'Failed to fetch breakeven calculation');
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadBreakeven();
+  }, [tenderId]);
 
-  const breakevenRequirements = useMemo(() => {
-    if (!targetBid || !winner) return [];
-    const activeWeights: Record<string, number> = {};
-    for (const c of criteria) activeWeights[c.key] = c.weight;
-    return calculateBreakevenRequirements(targetBid, winner, criteria, activeWeights);
-  }, [targetBid, winner, criteria]);
+  if (loading) {
+    return <div className="p-6 text-center text-xs text-stone-500">Calculating engine breakeven parameters...</div>;
+  }
 
-  if (!winner || nonWinners.length === 0) {
+  if (error) {
+    return <div className="p-3 bg-status-failedBg text-status-failedText text-xs rounded-sm">{error}</div>;
+  }
+
+  if (!breakevenData || nonWinners.length === 0) {
     return (
       <div className="gov-panel p-6 text-center text-xs text-stone-500">
         Breakeven analysis requires at least two eligible competing bids.
@@ -39,7 +53,11 @@ export const BreakevenCalculator: React.FC<BreakevenCalculatorProps> = ({
     );
   }
 
-  const scoreGap = (winner.finalScore || 0) - (targetBid?.finalScore || 0);
+  const requirements = breakevenData.breakevenByBid?.[selectedBidId] || [];
+  const targetBid = eligible.find((r) => r.bidId === selectedBidId) || nonWinners[0];
+  const winner = breakevenData.rank1Winner;
+
+  const scoreGap = winner ? Math.max(0, winner.score - (targetBid?.finalScore || 0)) : 0;
 
   return (
     <div className="space-y-4">
@@ -49,10 +67,10 @@ export const BreakevenCalculator: React.FC<BreakevenCalculatorProps> = ({
           <div>
             <h3 className="text-sm font-bold text-stone-900 flex items-center gap-1.5">
               <Target className="w-4 h-4 text-brand" />
-              <span>Single-Criterion Breakeven Delta Calculator</span>
+              <span>Backend Pure Engine Breakeven Delta Calculator</span>
             </h3>
             <p className="text-xs text-stone-500">
-              Calculate the minimum single-parameter improvement required for a non-winning vendor to overtake the Rank #1 winner
+              Computed directly via backend scoring engine equations (GET /api/tenders/:id/breakeven)
             </p>
           </div>
 
@@ -77,7 +95,7 @@ export const BreakevenCalculator: React.FC<BreakevenCalculatorProps> = ({
             <span className="text-stone-600">Comparing Target: </span>
             <strong className="text-stone-900">{targetBid?.vendorName}</strong> (Score: {targetBid?.finalScore?.toFixed(4)})
             <span className="text-stone-500"> vs Current Winner: </span>
-            <strong className="text-brand">{winner.vendorName}</strong> (Score: {winner.finalScore?.toFixed(4)})
+            <strong className="text-brand">{winner?.vendorName}</strong> (Score: {winner?.score?.toFixed(4)})
           </div>
           <span className="font-mono text-xs font-bold text-stone-800 bg-white px-2 py-0.5 rounded-sm border border-stone-300">
             Score Gap to Overcome: +{scoreGap.toFixed(4)} pts
@@ -108,7 +126,7 @@ export const BreakevenCalculator: React.FC<BreakevenCalculatorProps> = ({
               </tr>
             </thead>
             <tbody>
-              {breakevenRequirements.map((req) => {
+              {requirements.map((req: any) => {
                 return (
                   <tr key={req.criterionKey}>
                     <td className="font-semibold text-xs text-stone-900">

@@ -1,33 +1,53 @@
-import React, { useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ScoringCriterion, RankedResult } from '@agps/shared';
-import { calculateWeightCriticalBounds } from '../../utils/sensitivity.js';
+import { api } from '../../services/api.js';
 import { ShieldCheck, Award } from 'lucide-react';
 
 interface RobustnessSummaryProps {
+  tenderId: string;
   results: RankedResult[];
   criteria: ScoringCriterion[];
 }
 
 export const RobustnessSummary: React.FC<RobustnessSummaryProps> = ({
-  results,
-  criteria,
+  tenderId,
 }) => {
-  const eligible = useMemo(() => results.filter((r) => r.eligible), [results]);
-  const rank1 = useMemo(() => eligible.find((r) => r.rank === 1), [eligible]);
-  const rank2 = useMemo(() => eligible.find((r) => r.rank === 2), [eligible]);
+  const [data, setData] = useState<any | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const marginOfVictory = useMemo(() => {
-    if (!rank1 || !rank2) return 0;
-    return Math.max(0, (rank1.finalScore || 0) - (rank2.finalScore || 0));
-  }, [rank1, rank2]);
+  useEffect(() => {
+    async function loadData() {
+      try {
+        setLoading(true);
+        const res = await api.tenders.getBreakeven(tenderId);
+        setData(res.breakeven);
+      } catch (err: any) {
+        setError(err.message || 'Failed to load robustness parameters');
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadData();
+  }, [tenderId]);
 
-  const criticalBounds = useMemo(() => {
-    return calculateWeightCriticalBounds(results, criteria);
-  }, [results, criteria]);
-
-  if (!rank1 || !rank2) {
-    return null;
+  if (loading) {
+    return <div className="p-6 text-center text-xs text-stone-500">Evaluating robustness bounds on server...</div>;
   }
+
+  if (error) {
+    return <div className="p-3 bg-status-failedBg text-status-failedText text-xs rounded-sm">{error}</div>;
+  }
+
+  if (!data || !data.rank1Winner || !data.rank2RunnerUp) {
+    return (
+      <div className="gov-panel p-6 text-center text-xs text-stone-500">
+        Robustness analysis requires at least two eligible competing bids.
+      </div>
+    );
+  }
+
+  const { marginOfVictory, rank1Winner, rank2RunnerUp, criticalBounds } = data;
 
   return (
     <div className="space-y-4">
@@ -37,10 +57,10 @@ export const RobustnessSummary: React.FC<RobustnessSummaryProps> = ({
           <div>
             <h3 className="text-sm font-bold text-stone-900 flex items-center gap-1.5">
               <ShieldCheck className="w-4 h-4 text-brand" />
-              <span>Ranking Robustness & Margin of Victory Analysis</span>
+              <span>Engine Ranking Robustness & Margin of Victory Analysis</span>
             </h3>
             <p className="text-xs text-stone-500">
-              Quantifies outcome stability and the sensitivity boundary of the winning bid
+              Evaluated by backend pure engine (GET /api/tenders/:id/breakeven)
             </p>
           </div>
 
@@ -58,19 +78,19 @@ export const RobustnessSummary: React.FC<RobustnessSummaryProps> = ({
           <div className="bg-stone-50 p-3 rounded-sm border border-stone-200">
             <span className="font-bold text-stone-900 flex items-center gap-1">
               <Award className="w-3.5 h-3.5 text-brand" />
-              <span>Rank #1 Winner: {rank1.vendorName}</span>
+              <span>Rank #1 Winner: {rank1Winner.vendorName}</span>
             </span>
             <span className="font-mono text-stone-600 block mt-1">
-              Final Composite Score: {rank1.finalScore?.toFixed(4)}/100
+              Final Composite Score: {rank1Winner.score?.toFixed(4)}/100
             </span>
           </div>
 
           <div className="bg-stone-50 p-3 rounded-sm border border-stone-200">
             <span className="font-bold text-stone-800">
-              Runner-Up: {rank2.vendorName}
+              Runner-Up: {rank2RunnerUp.vendorName}
             </span>
             <span className="font-mono text-stone-600 block mt-1">
-              Final Composite Score: {rank2.finalScore?.toFixed(4)}/100
+              Final Composite Score: {rank2RunnerUp.score?.toFixed(4)}/100
             </span>
           </div>
         </div>
@@ -98,7 +118,7 @@ export const RobustnessSummary: React.FC<RobustnessSummaryProps> = ({
               </tr>
             </thead>
             <tbody>
-              {criticalBounds.map((bound) => {
+              {criticalBounds?.map((bound: any) => {
                 const isHighlyRobust = bound.stabilityMargin >= 20;
                 const isModerate = bound.stabilityMargin >= 10 && bound.stabilityMargin < 20;
                 return (
