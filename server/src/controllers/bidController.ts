@@ -1,10 +1,55 @@
 /**
- * Bid Controller with Ownership-Scoped Querying (SPEC §17.2, §23)
+ * Bid Controller (SPEC §17.2, §23)
  */
 
 import { Request, Response, NextFunction } from 'express';
 import { Bid } from '../models/bid.js';
+import { submitBid, getBidsForTender } from '../services/bidService.js';
+import { submitBidSchema } from '../validators/bid.validator.js';
 import { Types } from 'mongoose';
+
+export async function submitBidHandler(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    const data = submitBidSchema.parse(req.body);
+    const bid = await submitBid(req.params.id, req.user!.id, data);
+    res.status(201).json({ bid });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function getTenderBidsHandler(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    const bids = await getBidsForTender(req.params.id, req.user!);
+    res.status(200).json({ bids });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function getMyBidsHandler(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    const bids = await Bid.find({ vendor: new Types.ObjectId(req.user!.id) })
+      .sort({ submittedAt: -1 })
+      .populate('tender', 'tenderCode title status deadlineAt')
+      .exec();
+    res.status(200).json({ bids });
+  } catch (err) {
+    next(err);
+  }
+}
 
 export async function getBidById(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {

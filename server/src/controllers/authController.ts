@@ -175,7 +175,7 @@ export async function refresh(req: Request, res: Response, _next: NextFunction):
     res.status(200).json({
       accessToken: newAccessToken,
     });
-  } catch (_err: any) {
+  } catch {
     res.status(401).json({
       error: 'INVALID_REFRESH_TOKEN',
       message: 'Invalid or expired refresh token',
