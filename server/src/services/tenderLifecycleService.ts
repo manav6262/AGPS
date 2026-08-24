@@ -41,6 +41,11 @@ export function validateTenderForPublish(tender: ITender): { valid: boolean; err
     }
   }
 
+  // 2b. Eligibility rules validation (SPEC §6.2, §14.2)
+  if (!tender.eligibilityRules || tender.eligibilityRules.length === 0) {
+    errors.push('Tender must define at least one eligibility rule before publishing');
+  }
+
   // 3. Constraints validation
   if (!tender.constraints) {
     errors.push('Tender constraints are required');

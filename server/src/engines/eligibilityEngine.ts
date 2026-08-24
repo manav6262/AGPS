@@ -84,12 +84,15 @@ function evaluateOperator(operator: RuleOperator, actual: unknown, required: unk
 
 export function evaluateEligibility(
   context: BidContext,
-  rules: EligibilityRule[] = []
+  rules: EligibilityRule[]
 ): EligibilityResult {
-  const failedRules: FailedRule[] = [];
-  const safeRules = Array.isArray(rules) ? rules : [];
+  if (!Array.isArray(rules) || rules.length === 0) {
+    throw new Error('NO_ELIGIBILITY_RULES: Tender configuration must define at least one eligibility rule');
+  }
 
-  for (const rule of safeRules) {
+  const failedRules: FailedRule[] = [];
+
+  for (const rule of rules) {
     if (!rule.enabled) {
       continue;
     }

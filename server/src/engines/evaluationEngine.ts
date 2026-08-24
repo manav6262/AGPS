@@ -49,7 +49,7 @@ export function evaluateTenderPure(
   const rejectedResults: RankedResult[] = [];
 
   for (const bid of enrichedBids) {
-    const eligibility = evaluateEligibility(bid, snapshot.eligibilityRules || []);
+    const eligibility = evaluateEligibility(bid, snapshot.eligibilityRules);
     if (eligibility.eligible) {
       eligibleBids.push(bid);
     } else {

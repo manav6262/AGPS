@@ -86,6 +86,11 @@ const defaultValidCriteria = [
   { key: 'experience', label: 'Experience', direction: 'higher', weight: 10, unit: 'years', valueSource: { type: 'VENDOR_FIELD', path: 'experienceYears' } },
 ];
 
+const defaultEligibilityRules = [
+  { code: 'PRICE_BUDGET', field: 'price', operator: 'lte', value: 200000000000, message: 'Price within budget', enabled: true },
+  { code: 'EXPERIENCE', field: 'experienceYears', operator: 'gte', value: 1, message: 'Experience valid', enabled: true },
+];
+
 async function createAndPublishTender(): Promise<any> {
   const tender = await Tender.create({
     tenderCode: `TND-${Date.now()}`,
@@ -98,6 +103,7 @@ async function createAndPublishTender(): Promise<any> {
     startAt: new Date(Date.now() - 3600000),
     deadlineAt: new Date(Date.now() + 86400000),
     constraints: { maxBudgetMinor: 100000000, minQualityScore: 60, maxDeliveryDays: 30, minExperienceYears: 3 },
+    eligibilityRules: defaultEligibilityRules,
     scoringCriteria: defaultValidCriteria,
   });
 

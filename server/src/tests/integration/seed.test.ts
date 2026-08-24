@@ -1,12 +1,12 @@
 /**
- * Seed Script Verification Test (SPEC §24)
+ * Seed Script Verification Test (SPEC §21, §24)
  */
 
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import mongoose from 'mongoose';
 import { MongoMemoryServer } from 'mongodb-memory-server';
 import { seedDatabase } from '../../seed/index.js';
-import { Tender, User, Bid, Evaluation } from '../../models/index.js';
+import { Tender, User, Evaluation } from '../../models/index.js';
 import { verifyAuditChain } from '../../services/auditService.js';
 
 let mongoServer: MongoMemoryServer;
@@ -23,7 +23,7 @@ afterAll(async () => {
 });
 
 describe('AGPS Phase 8 — Seed Data and Full State Verification', () => {
-  it('Seed script executes cleanly, populates all 5 tenders across lifecycle states, and passes audit chain verification', async () => {
+  it('Seed script executes cleanly, populates all tenders, passes audit chains, and proves weight-flip and 6-criteria generics', async () => {
     await seedDatabase(mongoServer.getUri());
 
     // 1. Verify Users & Roles
@@ -33,9 +33,9 @@ describe('AGPS Phase 8 — Seed Data and Full State Verification', () => {
     expect(users.filter((u) => u.role === 'AUDITOR')).toHaveLength(1);
     expect(users.filter((u) => u.role === 'VENDOR')).toHaveLength(5);
 
-    // 2. Verify 5 Tenders across states
+    // 2. Verify all seeded tenders
     const tenders = await Tender.find().sort({ tenderCode: 1 });
-    expect(tenders).toHaveLength(5);
+    expect(tenders.length).toBeGreaterThanOrEqual(7);
 
     const statuses = tenders.map((t) => t.status);
     expect(statuses).toContain('DRAFT');
@@ -44,13 +44,38 @@ describe('AGPS Phase 8 — Seed Data and Full State Verification', () => {
     expect(statuses).toContain('EVALUATED');
     expect(statuses).toContain('CLOSED');
 
-    // 3. Verify Bids exist and are linked
-    const bids = await Bid.find();
-    expect(bids.length).toBeGreaterThanOrEqual(10);
+    // 3. Verify Proof 1: Weight-Flip Tender Pair (SPEC §21)
+    const tenderFlipA = await Tender.findOne({ tenderCode: 'TND-2026-FLIP-A' });
+    const tenderFlipB = await Tender.findOne({ tenderCode: 'TND-2026-FLIP-B' });
+    expect(tenderFlipA).toBeDefined();
+    expect(tenderFlipB).toBeDefined();
 
-    // 4. Verify Evaluations exist for evaluated and closed tenders
-    const evals = await Evaluation.find();
-    expect(evals.length).toBeGreaterThanOrEqual(2);
+    const evalA = await Evaluation.findOne({ tender: tenderFlipA!._id });
+    const evalB = await Evaluation.findOne({ tender: tenderFlipB!._id });
+    expect(evalA).toBeDefined();
+    expect(evalB).toBeDefined();
+
+    const winnerA = evalA!.results.find((r) => r.rank === 1);
+    const winnerB = evalB!.results.find((r) => r.rank === 1);
+
+    expect(winnerA!.vendorName).toBe('Tata Advanced Systems');
+    expect(winnerB!.vendorName).toBe('Infosys Public Services');
+    expect(winnerA!.vendorName).not.toBe(winnerB!.vendorName);
+
+    // 4. Verify Proof 2: 6-Criteria Generic Engine Tender (SPEC §21 / TND-2026-003)
+    const tender6Crit = await Tender.findOne({ tenderCode: 'TND-2026-003' });
+    expect(tender6Crit).toBeDefined();
+    expect(tender6Crit!.scoringCriteria).toHaveLength(6);
+
+    const eval6Crit = await Evaluation.findOne({ tender: tender6Crit!._id });
+    expect(eval6Crit).toBeDefined();
+    expect(eval6Crit!.results).toHaveLength(3);
+    for (const r of eval6Crit!.results) {
+      expect(r.breakdown).toHaveLength(6);
+      const keys = r.breakdown?.map((b) => b.key);
+      expect(keys).toContain('warranty');
+      expect(keys).toContain('slaResponse');
+    }
 
     // 5. Verify Cryptographic Audit Chains for every seeded tender
     for (const tender of tenders) {

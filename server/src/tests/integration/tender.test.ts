@@ -54,6 +54,11 @@ const defaultValidCriteria = [
   { key: 'experience', label: 'Experience', direction: 'higher', weight: 10, unit: 'years', valueSource: { type: 'VENDOR_FIELD', path: 'experienceYears' } },
 ];
 
+const defaultEligibilityRules = [
+  { code: 'PRICE_BUDGET', field: 'price', operator: 'lte', value: 200000000000, message: 'Price within budget', enabled: true },
+  { code: 'EXPERIENCE', field: 'experienceYears', operator: 'gte', value: 1, message: 'Experience valid', enabled: true },
+];
+
 describe('AGPS Phase 4 — Tender Lifecycle and Graduated Lock', () => {
   it('Test 21: publishing populates lockedConfig v1 with a stable hash, state SOFT_LOCKED', async () => {
     // 1. Create DRAFT tender
@@ -119,6 +124,7 @@ describe('AGPS Phase 4 — Tender Lifecycle and Graduated Lock', () => {
       startAt: new Date(Date.now() + 3600000),
       deadlineAt: new Date(Date.now() + 86400000),
       constraints: { maxBudgetMinor: 100000000, minQualityScore: 70, maxDeliveryDays: 30, minExperienceYears: 3 },
+      eligibilityRules: defaultEligibilityRules,
       scoringCriteria: defaultValidCriteria,
     });
 
@@ -175,6 +181,7 @@ describe('AGPS Phase 4 — Tender Lifecycle and Graduated Lock', () => {
       startAt: new Date(Date.now() - 3600000),
       deadlineAt: new Date(Date.now() + 86400000),
       constraints: { maxBudgetMinor: 100000000, minQualityScore: 70, maxDeliveryDays: 30, minExperienceYears: 3 },
+      eligibilityRules: defaultEligibilityRules,
       scoringCriteria: defaultValidCriteria,
     });
 
@@ -218,6 +225,7 @@ describe('AGPS Phase 4 — Tender Lifecycle and Graduated Lock', () => {
       startAt: new Date(Date.now() - 3600000),
       deadlineAt: new Date(Date.now() + 86400000),
       constraints: { maxBudgetMinor: 100000000, minQualityScore: 70, maxDeliveryDays: 30, minExperienceYears: 3 },
+      eligibilityRules: defaultEligibilityRules,
       scoringCriteria: defaultValidCriteria,
     });
 
@@ -251,6 +259,7 @@ describe('AGPS Phase 4 — Tender Lifecycle and Graduated Lock', () => {
       startAt: new Date(Date.now() + 3600000),
       deadlineAt: new Date(Date.now() + 86400000),
       constraints: { maxBudgetMinor: 100000000, minQualityScore: 70, maxDeliveryDays: 30, minExperienceYears: 3 },
+      eligibilityRules: defaultEligibilityRules,
       scoringCriteria: defaultValidCriteria,
     });
 
@@ -277,6 +286,7 @@ describe('AGPS Phase 4 — Tender Lifecycle and Graduated Lock', () => {
       startAt: new Date(Date.now() + 3600000),
       deadlineAt: new Date(Date.now() + 86400000),
       constraints: { maxBudgetMinor: 100000000, minQualityScore: 70, maxDeliveryDays: 30, minExperienceYears: 3 },
+      eligibilityRules: defaultEligibilityRules,
       scoringCriteria: defaultValidCriteria,
     });
 
