@@ -138,7 +138,7 @@ export async function login(req: Request, res: Response, next: NextFunction): Pr
   }
 }
 
-export async function refresh(req: Request, res: Response, next: NextFunction): Promise<void> {
+export async function refresh(req: Request, res: Response, _next: NextFunction): Promise<void> {
   try {
     const token = req.cookies?.[REFRESH_COOKIE_NAME];
     if (!token) {

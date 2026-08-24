@@ -167,6 +167,37 @@ A serious government/enterprise tool. Clean, restrained, dense where density hel
 
 ---
 
+## Testing discipline — run only what the gate needs
+
+**Do not run the full test suite at every phase.** Run only the current phase's gate tests. Re-running already-passing tests wastes time and output.
+
+Always use the dot reporter to keep output small:
+
+```bash
+npx vitest run --reporter=dot -t "<pattern>"
+```
+
+Per phase:
+
+| Phase | Command |
+|---|---|
+| 1 | `npx vitest run --reporter=dot src/tests/unit/engines.test.ts` |
+| 2 | `npx vitest run --reporter=dot -t "Test 36\|hash chain\|canonical"` |
+| 3 | `npx vitest run --reporter=dot -t "Test 32\|Test 33\|Test 35"` |
+| 4 | `npx vitest run --reporter=dot -t "Test 21\|Test 22\|Test 24c"` |
+| 5 | `npx vitest run --reporter=dot -t "Test 25\|Test 26\|Test 29\|Test 34\|Test 37"` |
+| 6 | `npx vitest run --reporter=dot -t "Test 23\|Test 24\|Test 31"` |
+| **8** | `npx vitest run` — **full suite, all 42, once** |
+| **12** | `npx vitest run` — **full suite, final verification** |
+
+Name every test so it is filterable — start the title with its spec number, e.g. `it('Test 24c: config edit fails atomically when a bid exists', ...)`.
+
+**Full suite runs only at Phase 8 and Phase 12.** If a gate test fails, fix it and re-run **only that test** — not the file, not the suite.
+
+Do not paste passing test output. Report counts only. Paste output **only for failures**, and only the failing assertion, not the whole run.
+
+---
+
 ## Reporting format
 
 At each phase gate, report exactly:

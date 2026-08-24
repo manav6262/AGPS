@@ -9,6 +9,7 @@ import cookieParser from 'cookie-parser';
 import { env } from './config/env.js';
 import { authRouter } from './routes/authRoutes.js';
 import { bidRouter } from './routes/bidRoutes.js';
+import { tenderRouter } from './routes/tenderRoutes.js';
 import { authenticateToken, requireRole } from './middleware/auth.js';
 import { errorHandler } from './middleware/errorHandler.js';
 
@@ -49,6 +50,7 @@ app.get('/api/admin/dashboard', authenticateToken, requireRole('ADMIN'), (_req, 
 // Mount Routes
 app.use('/api/auth', authRouter);
 app.use('/api/bids', bidRouter);
+app.use('/api/tenders', tenderRouter);
 
 // Central error handler (SPEC §17.4)
 app.use(errorHandler);
