@@ -1,13 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { api } from '../services/api.js';
-import { VendorProfile } from '../types/index.js';
+import { IVendorProfile } from '@agps/shared';
 import { ProvenanceBadge } from '../components/common/ProvenanceBadge.js';
 import { useAuth } from '../context/AuthContext.js';
 import { Building2, Save, CheckCircle2, AlertCircle } from 'lucide-react';
 
 export const VendorProfilePage: React.FC = () => {
   const { refreshProfile } = useAuth();
-  const [profile, setProfile] = useState<VendorProfile | null>(null);
+  const [profile, setProfile] = useState<IVendorProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState<string | null>(null);

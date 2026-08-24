@@ -2,13 +2,13 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.js';
 import { api } from '../services/api.js';
-import { Tender } from '../types/index.js';
+import { ITender } from '@agps/shared';
 import { StatusBadge } from '../components/common/StatusBadge.js';
 import { FileText, ShieldCheck, PlusCircle, CheckCircle2, ArrowRight } from 'lucide-react';
 
 export const Dashboard: React.FC = () => {
   const { user, vendorProfile } = useAuth();
-  const [tenders, setTenders] = useState<Tender[]>([]);
+  const [tenders, setTenders] = useState<ITender[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {

@@ -3,12 +3,12 @@
  */
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { User, VendorProfile } from '../types/index.js';
+import { IUser, IVendorProfile } from '@agps/shared';
 import { api, setAccessToken, getAccessToken } from '../services/api.js';
 
 interface AuthContextType {
-  user: User | null;
-  vendorProfile: VendorProfile | null;
+  user: IUser | null;
+  vendorProfile: IVendorProfile | null;
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (credentials: { email: string; password: string }) => Promise<void>;
@@ -20,8 +20,8 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [vendorProfile, setVendorProfile] = useState<VendorProfile | null>(null);
+  const [user, setUser] = useState<IUser | null>(null);
+  const [vendorProfile, setVendorProfile] = useState<IVendorProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   const loadUser = useCallback(async () => {

@@ -20,10 +20,11 @@ export default {
           800: '#292524',
           900: '#1C1917',
         },
-        // Deep Institutional Brand Green (Header, active nav, primary actions only)
+        // Deep Terracotta Brand (Orange-800 / Orange-900: Ink, not highlighter)
         brand: {
-          DEFAULT: '#14532D',
-          hover: '#166534',
+          DEFAULT: '#9A3412',
+          hover: '#7C2D12',
+          dark: '#6C2710',
         },
         // Semantic status colors (Strictly for state indicators only)
         status: {
@@ -33,12 +34,12 @@ export default {
           failedText: '#B91C1C',
           failedBg: '#FEF2F2',
           failedBorder: '#FECACA',
-          warningText: '#B45309',
-          warningBg: '#FFFBEB',
-          warningBorder: '#FDE68A',
-          neutralText: '#57534E',
-          neutralBg: '#F5F5F4',
-          neutralBorder: '#E7E5E4',
+          pendingText: '#44403C',
+          pendingBg: '#F5F5F4',
+          pendingBorder: '#D6D3D1',
+          draftText: '#78716C',
+          draftBg: '#FAFAF9',
+          draftBorder: '#E7E5E4',
         },
       },
       fontFamily: {
@@ -53,6 +54,7 @@ export default {
           'sans-serif',
         ],
         mono: [
+          'IBM Plex Mono',
           'ui-monospace',
           'SFMono-Regular',
           'Menlo',

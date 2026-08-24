@@ -8,7 +8,7 @@ export const Header: React.FC = () => {
   const { user, vendorProfile, logout, isAuthenticated } = useAuth();
 
   return (
-    <header className="bg-brand text-white border-b-2 border-[#0F3E22]">
+    <header className="bg-brand text-white border-b-2 border-brand-hover">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-14">
           {/* Logo & Portal Title */}
@@ -49,7 +49,7 @@ export const Header: React.FC = () => {
 
               <button
                 onClick={logout}
-                className="inline-flex items-center space-x-1 bg-[#0F3E22] hover:bg-[#0A2E19] text-stone-200 hover:text-white px-2.5 py-1 rounded-sm border border-[#166534] transition-colors"
+                className="inline-flex items-center space-x-1 bg-brand-hover hover:bg-brand-dark text-stone-200 hover:text-white px-2.5 py-1 rounded-sm border border-brand-dark transition-colors"
                 title="Sign out of AGPS session"
               >
                 <LogOut className="w-3.5 h-3.5" />
@@ -68,7 +68,7 @@ export const Header: React.FC = () => {
               </Link>
               <Link
                 to="/register"
-                className="bg-[#0F3E22] hover:bg-[#0A2E19] text-white font-medium px-3 py-1 rounded-sm text-xs border border-[#166534] transition-colors"
+                className="bg-brand-hover hover:bg-brand-dark text-white font-medium px-3 py-1 rounded-sm text-xs border border-brand-dark transition-colors"
               >
                 Vendor Registration
               </Link>

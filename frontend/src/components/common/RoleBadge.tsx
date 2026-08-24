@@ -1,5 +1,5 @@
 import React from 'react';
-import { UserRole } from '../../types/index.js';
+import { UserRole } from '@agps/shared';
 
 interface RoleBadgeProps {
   role: UserRole;

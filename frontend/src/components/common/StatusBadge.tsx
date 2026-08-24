@@ -1,5 +1,5 @@
 import React from 'react';
-import { TenderStatus } from '../../types/index.js';
+import { TenderStatus } from '@agps/shared';
 
 interface StatusBadgeProps {
   status: TenderStatus | string;
@@ -23,16 +23,18 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({ status, className = ''
     case 'BIDDING_OPEN':
     case 'PENDING':
     case 'WARNING':
-      // Semantic Warning / In-Progress Amber
-      style = 'bg-[#FFFBEB] text-[#B45309] border-[#FDE68A]';
+    case 'IN_PROGRESS':
+      // Dark Stone for in-progress/pending (OFF amber)
+      style = 'bg-[#F5F5F4] text-[#44403C] border-[#D6D3D1]';
       break;
 
     case 'BIDDING_CLOSED':
     case 'DRAFT':
     case 'CLOSED':
+    case 'INACTIVE':
     case 'NEUTRAL':
-      // Neutral Warm Grey
-      style = 'bg-[#F5F5F4] text-[#57534E] border-[#E7E5E4]';
+      // Neutral light stone
+      style = 'bg-[#FAFAF9] text-[#78716C] border-[#E7E5E4]';
       break;
 
     case 'CANCELLED':

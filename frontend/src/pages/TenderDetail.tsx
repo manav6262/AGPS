@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { api } from '../services/api.js';
-import { Tender, Bid, Evaluation } from '../types/index.js';
+import { ITender, IBid, EvaluationResult } from '@agps/shared';
 import { StatusBadge } from '../components/common/StatusBadge.js';
 import { useAuth } from '../context/AuthContext.js';
 import {
@@ -17,9 +17,9 @@ export const TenderDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
 
-  const [tender, setTender] = useState<Tender | null>(null);
-  const [bids, setBids] = useState<Bid[]>([]);
-  const [evaluation, setEvaluation] = useState<Evaluation | null>(null);
+  const [tender, setTender] = useState<ITender | null>(null);
+  const [bids, setBids] = useState<IBid[]>([]);
+  const [evaluation, setEvaluation] = useState<EvaluationResult | null>(null);
   const [loading, setLoading] = useState(true);
   const [actionError, setActionError] = useState<string | null>(null);
   const [actionSuccess, setActionSuccess] = useState<string | null>(null);

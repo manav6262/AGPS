@@ -1,14 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../services/api.js';
-import { Tender } from '../types/index.js';
+import { ITender } from '@agps/shared';
 import { StatusBadge } from '../components/common/StatusBadge.js';
 import { useAuth } from '../context/AuthContext.js';
 import { Search, PlusCircle } from 'lucide-react';
 
 export const TendersList: React.FC = () => {
   const { user } = useAuth();
-  const [tenders, setTenders] = useState<Tender[]>([]);
+  const [tenders, setTenders] = useState<ITender[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('ALL');

@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { api } from '../services/api.js';
-import { Tender } from '../types/index.js';
+import { ITender } from '@agps/shared';
 import { RoleBadge } from '../components/common/RoleBadge.js';
 import { ShieldCheck, CheckCircle2, Search } from 'lucide-react';
 
 export const AuditLogs: React.FC = () => {
-  const [tenders, setTenders] = useState<Tender[]>([]);
+  const [tenders, setTenders] = useState<ITender[]>([]);
   const [selectedTenderId, setSelectedTenderId] = useState<string>('');
   const [auditEntries, setAuditEntries] = useState<any[]>([]);
   const [verificationResult, setVerificationResult] = useState<{ valid: boolean; totalEntries: number; reason?: string } | null>(null);

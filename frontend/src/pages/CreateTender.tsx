@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { api } from '../services/api.js';
-import { ScoringCriterion, EligibilityRule } from '../types/index.js';
+import { ScoringCriterion, EligibilityRule } from '@agps/shared';
 import { PlusCircle, Trash2, ArrowLeft, AlertCircle } from 'lucide-react';
 
 export const CreateTender: React.FC = () => {

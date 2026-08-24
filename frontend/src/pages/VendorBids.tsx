@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../services/api.js';
-import { Bid } from '../types/index.js';
+import { IBid } from '@agps/shared';
 import { ProvenanceBadge } from '../components/common/ProvenanceBadge.js';
 import { Send, Eye } from 'lucide-react';
 
 export const VendorBids: React.FC = () => {
-  const [bids, setBids] = useState<Bid[]>([]);
+  const [bids, setBids] = useState<IBid[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
