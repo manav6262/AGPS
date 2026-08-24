@@ -8,7 +8,7 @@ import rateLimit from 'express-rate-limit';
 
 export const authRateLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 5, // 5 requests per window per IP
+  max: process.env.NODE_ENV === 'development' ? 100 : 5, // 5 requests per window in production (SPEC §17.1), relaxed in development
   standardHeaders: true,
   legacyHeaders: false,
   message: {

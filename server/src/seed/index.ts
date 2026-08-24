@@ -651,8 +651,8 @@ export async function seedDatabase(mongoUri: string = env.MONGODB_URI): Promise<
   console.log('Database seeding successfully completed with all 7 tenders and proofs!');
 }
 
-// Direct execution
-if (import.meta.url === `file://${process.argv[1]?.replace(/\\/g, '/')}` || process.argv.includes('--run')) {
+// Direct execution (only outside automated test suite)
+if (process.env.NODE_ENV !== 'test') {
   seedDatabase()
     .then(() => {
       console.log('Seeding finished. Exiting.');
