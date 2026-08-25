@@ -16,12 +16,12 @@ export async function evaluateTenderHandler(
 ): Promise<void> {
   try {
     const { id } = req.params;
-    if (!Types.ObjectId.isValid(id)) {
+    if (!Types.ObjectId.isValid(id as string)) {
       res.status(404).json({ error: 'NOT_FOUND', message: 'Tender not found' });
       return;
     }
 
-    const tender = await Tender.findById(id);
+    const tender = await Tender.findById(id as string);
     if (!tender) {
       res.status(404).json({ error: 'NOT_FOUND', message: 'Tender not found' });
       return;
@@ -51,12 +51,12 @@ export async function getTenderEvaluationHandler(
 ): Promise<void> {
   try {
     const { id } = req.params;
-    if (!Types.ObjectId.isValid(id)) {
+    if (!Types.ObjectId.isValid(id as string)) {
       res.status(404).json({ error: 'NOT_FOUND', message: 'Tender not found' });
       return;
     }
 
-    const evaluation = await Evaluation.findOne({ tender: new Types.ObjectId(id) })
+    const evaluation = await Evaluation.findOne({ tender: new Types.ObjectId(id as string) })
       .sort({ evaluatedAt: -1 })
       .exec();
 

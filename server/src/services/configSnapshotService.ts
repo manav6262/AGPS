@@ -18,7 +18,7 @@ export interface CreateSnapshotInput {
   engineVersion?: string;
   constraints: Constraints;
   eligibilityRules: EligibilityRule[];
-  technicalCriteria: TechnicalCriterion[];
+  technicalCriteria?: TechnicalCriterion[];
   scoringCriteria: ScoringCriterion[];
   tieBreakOrder: string[];
 }
@@ -57,7 +57,7 @@ export function buildTenderConfigSnapshot(
     normalizationMethod: 'RATIO',
     constraints: toPlain(input.constraints),
     eligibilityRules: toPlain(input.eligibilityRules),
-    technicalCriteria: toPlain(input.technicalCriteria),
+    technicalCriteria: input.technicalCriteria ? toPlain(input.technicalCriteria) : [],
     scoringCriteria: toPlain(input.scoringCriteria),
     tieBreakOrder: toPlain(input.tieBreakOrder),
   };

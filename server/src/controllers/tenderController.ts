@@ -81,7 +81,7 @@ export async function updateTenderHandler(
 ): Promise<void> {
   try {
     const data = updateTenderSchema.parse(req.body);
-    const updated = await updateTender(req.params.id, data, req.user!.id);
+    const updated = await updateTender(req.params.id as string, data, req.user!.id);
     res.status(200).json({ tender: updated });
   } catch (err) {
     next(err);
@@ -95,7 +95,7 @@ export async function transitionTenderHandler(
 ): Promise<void> {
   try {
     const data = transitionTenderSchema.parse(req.body);
-    const updated = await transitionTender(req.params.id, data.targetStatus, req.user!.id);
+    const updated = await transitionTender(req.params.id as string, data.targetStatus, req.user!.id);
     res.status(200).json({ tender: updated });
   } catch (err) {
     next(err);

@@ -74,8 +74,8 @@ async function loadTenderAndBidContexts(tenderId: string | Types.ObjectId): Prom
   }
 
   const rawSnapshot = tender.lockedConfig
-    ? tender.lockedConfig.toObject
-      ? tender.lockedConfig.toObject()
+    ? (tender.lockedConfig as any).toObject
+      ? (tender.lockedConfig as any).toObject()
       : tender.lockedConfig
     : null;
 
@@ -90,15 +90,15 @@ async function loadTenderAndBidContexts(tenderId: string | Types.ObjectId): Prom
       engineVersion: '1.0.0',
       rankingMethod: 'SAW',
       normalizationMethod: 'RATIO',
-      constraints: tender.constraints?.toObject ? tender.constraints.toObject() : tender.constraints,
+      constraints: (tender.constraints as any)?.toObject ? (tender.constraints as any).toObject() : tender.constraints,
       eligibilityRules: Array.isArray(tender.eligibilityRules)
-        ? tender.eligibilityRules.map((r: any) => (r.toObject ? r.toObject() : r))
+        ? tender.eligibilityRules.map((r: any) => (r?.toObject ? r.toObject() : r))
         : [],
       technicalCriteria: Array.isArray(tender.technicalCriteria)
-        ? tender.technicalCriteria.map((r: any) => (r.toObject ? r.toObject() : r))
+        ? tender.technicalCriteria.map((r: any) => (r?.toObject ? r.toObject() : r))
         : [],
       scoringCriteria: Array.isArray(tender.scoringCriteria)
-        ? tender.scoringCriteria.map((r: any) => (r.toObject ? r.toObject() : r))
+        ? tender.scoringCriteria.map((r: any) => (r?.toObject ? r.toObject() : r))
         : [],
       tieBreakOrder: ['derivedQualityScore', 'priceMinor', 'submittedAt'],
       configHash: 'SIMULATION_ADHOC',
@@ -122,9 +122,9 @@ async function loadTenderAndBidContexts(tenderId: string | Types.ObjectId): Prom
     vendorName: (b.vendor as any)?.name || 'Unknown Vendor',
     submittedAt: b.submittedAt,
     priceMinor: b.priceMinor,
-    deliveryDays: b.deliveryDays?.toObject ? b.deliveryDays.toObject() : b.deliveryDays,
-    vendorSnapshot: b.vendorSnapshot?.toObject ? b.vendorSnapshot.toObject() : b.vendorSnapshot,
-    technicalValues: b.technicalValues ? (b.technicalValues.toObject ? b.technicalValues.toObject() : b.technicalValues) : {},
+    deliveryDays: (b.deliveryDays as any)?.toObject ? (b.deliveryDays as any).toObject() : b.deliveryDays,
+    vendorSnapshot: (b.vendorSnapshot as any)?.toObject ? (b.vendorSnapshot as any).toObject() : b.vendorSnapshot,
+    technicalValues: b.technicalValues ? ((b.technicalValues as any).toObject ? (b.technicalValues as any).toObject() : b.technicalValues) : {},
     derivedQualityScore: b.derivedQualityScore,
   }));
 

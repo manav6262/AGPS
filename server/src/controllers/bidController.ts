@@ -15,7 +15,7 @@ export async function submitBidHandler(
 ): Promise<void> {
   try {
     const data = submitBidSchema.parse(req.body);
-    const bid = await submitBid(req.params.id, req.user!.id, data);
+    const bid = await submitBid(req.params.id as string, req.user!.id, data);
     res.status(201).json({ bid });
   } catch (err) {
     next(err);
@@ -28,7 +28,7 @@ export async function getTenderBidsHandler(
   next: NextFunction
 ): Promise<void> {
   try {
-    const bids = await getBidsForTender(req.params.id, req.user!);
+    const bids = await getBidsForTender(req.params.id as string, req.user!);
     res.status(200).json({ bids });
   } catch (err) {
     next(err);
@@ -60,7 +60,7 @@ export async function getBidById(req: Request, res: Response, next: NextFunction
     }
 
     const { id } = req.params;
-    if (!Types.ObjectId.isValid(id)) {
+    if (!Types.ObjectId.isValid(id as string)) {
       res.status(404).json({ error: 'NOT_FOUND', message: 'Bid not found' });
       return;
     }
@@ -69,8 +69,8 @@ export async function getBidById(req: Request, res: Response, next: NextFunction
     // Scoping is structural in the MongoDB query filter, never checked after fetching!
     const filter =
       req.user.role === 'VENDOR'
-        ? { _id: new Types.ObjectId(id), vendor: new Types.ObjectId(req.user.id) }
-        : { _id: new Types.ObjectId(id) };
+        ? { _id: new Types.ObjectId(id as string), vendor: new Types.ObjectId(req.user.id) }
+        : { _id: new Types.ObjectId(id as string) };
 
     const query = Bid.findOne(filter).populate('tender', 'status');
 
@@ -83,29 +83,24 @@ export async function getBidById(req: Request, res: Response, next: NextFunction
 
     if (!bid) {
       // Return 404 (does not leak existence of other vendors' bids)
-      res.status(404).json({
-        error: 'NOT_FOUND',
-        message: 'Bid not found',
-      });
+      res.status(404).json({ error: 'NOT_FOUND', message: 'Bid not found' });
       return;
     }
 
-    // If Admin/Auditor requests bid, check if tender is unsealed
-    if (req.user.role !== 'VENDOR') {
-      const tenderStatus = (bid.tender as any)?.status;
-      const unsealedStatuses = [
-        'FINANCIAL_OPEN',
-        'UNDER_EVALUATION',
-        'EVALUATED',
-        'WINNER_SELECTED',
-        'CLOSED',
-      ];
-      if (unsealedStatuses.includes(tenderStatus)) {
-        // Fetch price
-        const withPrice = await Bid.findById(bid._id).select('+priceMinor').populate('tender', 'status').exec();
-        res.status(200).json({ bid: withPrice });
-        return;
-      }
+    // Price sealing check for Admin/Auditor (SPEC §17.4)
+    const tenderStatus = (bid.tender as any)?.status;
+    const isUnsealed =
+      tenderStatus === 'FINANCIAL_OPEN' ||
+      tenderStatus === 'EVALUATED' ||
+      tenderStatus === 'WINNER_SELECTED' ||
+      tenderStatus === 'CLOSED';
+
+    if (!isUnsealed && req.user.role !== 'VENDOR') {
+      // Model projection select: false already excludes priceMinor, but reinforce defense-in-depth
+      const plain = bid.toObject();
+      delete (plain as any).priceMinor;
+      res.status(200).json({ bid: plain });
+      return;
     }
 
     res.status(200).json({ bid });
