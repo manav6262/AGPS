@@ -21,7 +21,14 @@ export const app = express();
 app.use(helmet());
 
 // CORS allowlist configuration (SPEC §17.1)
-const allowedOrigins = [env.CORS_ORIGIN, 'http://localhost:5173', 'http://127.0.0.1:5173'];
+// CORS_ORIGIN accepts a comma-separated list so a deployed frontend origin
+// can be added without a code change. Trailing slashes are stripped because
+// browsers send the Origin header without one.
+const allowedOrigins = [
+  ...env.CORS_ORIGIN.split(',').map((o) => o.trim().replace(/\/$/, '')).filter(Boolean),
+  'http://localhost:5173',
+  'http://127.0.0.1:5173',
+];
 app.use(
   cors({
     origin: (origin, callback) => {

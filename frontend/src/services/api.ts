@@ -4,7 +4,10 @@
  * Handles HTTP requests, JWT header injection, refresh token rotation, and error normalization.
  */
 
-const API_BASE = '/api';
+// In development this stays '/api' and is proxied to localhost:5000 by Vite.
+// In production VITE_API_URL points at the deployed API origin.
+// Do NOT set VITE_API_URL in a local .env file — it would bypass the proxy.
+const API_BASE = import.meta.env.VITE_API_URL ?? '/api';
 
 let currentAccessToken: string | null = localStorage.getItem('agps_token');
 

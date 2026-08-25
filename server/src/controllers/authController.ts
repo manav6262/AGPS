@@ -16,10 +16,17 @@ import {
 import { DEFAULT_PROVENANCE } from '@agps/shared';
 
 const REFRESH_COOKIE_NAME = 'refreshToken';
+
+// In production the frontend (Vercel) and API (Render) are on different
+// domains, so SameSite=Strict would prevent the refresh cookie from ever
+// being sent. SameSite=None requires Secure, which is satisfied over HTTPS.
+// Locally both run on localhost, so Strict is kept.
+const IS_PROD = process.env.NODE_ENV === 'production';
+
 const REFRESH_COOKIE_OPTIONS = {
   httpOnly: true,
-  sameSite: 'strict' as const,
-  secure: process.env.NODE_ENV === 'production',
+  sameSite: (IS_PROD ? 'none' : 'strict') as 'none' | 'strict',
+  secure: IS_PROD,
   maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
 };
 
@@ -184,10 +191,11 @@ export async function refresh(req: Request, res: Response, _next: NextFunction):
 }
 
 export function logout(_req: Request, res: Response): void {
+  // Must match the attributes the cookie was set with, or it will not clear.
   res.clearCookie(REFRESH_COOKIE_NAME, {
     httpOnly: true,
-    sameSite: 'strict',
-    secure: process.env.NODE_ENV === 'production',
+    sameSite: REFRESH_COOKIE_OPTIONS.sameSite,
+    secure: REFRESH_COOKIE_OPTIONS.secure,
   });
   res.status(200).json({
     message: 'Logged out successfully',
