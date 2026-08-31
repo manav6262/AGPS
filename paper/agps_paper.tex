@@ -1,0 +1,454 @@
+%=====================================================================
+% AGPS — IEEE Conference Paper
+% Template: IEEEtran (official IEEE conference format)
+%
+% Compile on Overleaf:  New Project -> Upload Project -> this file
+% Or locally:           pdflatex -> bibtex -> pdflatex -> pdflatex
+%=====================================================================
+
+\documentclass[conference]{IEEEtran}
+\IEEEoverridecommandlockouts
+
+\usepackage{cite}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{algorithmic}
+\usepackage{graphicx}
+\usepackage{textcomp}
+\usepackage{xcolor}
+\usepackage{url}
+\usepackage{booktabs}
+
+\def\BibTeX{{\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08em
+    T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
+
+\begin{document}
+
+%---------------------------------------------------------------------
+\title{A Deterministic Rule-Based Multi-Criteria Framework for
+Transparent and Explainable Government Tender Evaluation}
+% Keep the title specific. Avoid "novel", "revolutionary", "AI-powered".
+
+% ---------------------------------------------------------------------
+% LAYOUT A -- all authors share one institution (use this one).
+% IEEEtran places at most 3 author blocks per row, so 5 separate blocks
+% overflow the column. Grouping the names under a single shared
+% affiliation is the standard fix and is accepted by IEEE.
+% ---------------------------------------------------------------------
+\author{
+\IEEEauthorblockN{
+Manav Singh,
+Second Author,
+Third Author,
+Fourth Author,
+Fifth Author}
+\IEEEauthorblockA{\textit{Dept. of Computer Science and Engineering} \\
+\textit{Your Institute Name}, City, India \\
+manav@example.com, second@example.com, third@example.com, \\
+fourth@example.com, fifth@example.com}
+}
+
+% ---------------------------------------------------------------------
+% LAYOUT B -- authors from DIFFERENT institutions, or if you want each
+% author listed with their own affiliation block. Delete Layout A above
+% and uncomment this. Three blocks per row; \\ starts a new row.
+% ---------------------------------------------------------------------
+%\author{
+%\IEEEauthorblockN{Manav Singh}
+%\IEEEauthorblockA{\textit{Dept. of CSE} \\ \textit{Institute Name} \\
+%City, India \\ manav@example.com}
+%\and
+%\IEEEauthorblockN{Second Author}
+%\IEEEauthorblockA{\textit{Dept. of CSE} \\ \textit{Institute Name} \\
+%City, India \\ second@example.com}
+%\and
+%\IEEEauthorblockN{Third Author}
+%\IEEEauthorblockA{\textit{Dept. of CSE} \\ \textit{Institute Name} \\
+%City, India \\ third@example.com}
+%\\
+%\IEEEauthorblockN{Fourth Author}
+%\IEEEauthorblockA{\textit{Dept. of CSE} \\ \textit{Institute Name} \\
+%City, India \\ fourth@example.com}
+%\and
+%\IEEEauthorblockN{Fifth Author}
+%\IEEEauthorblockA{\textit{Dept. of CSE} \\ \textit{Institute Name} \\
+%City, India \\ fifth@example.com}
+%}
+
+\maketitle
+
+%---------------------------------------------------------------------
+\begin{abstract}
+% 150-250 words. No citations. Structure:
+% (1) problem  (2) approach  (3) what was built  (4) key result
+% (5) principal limitation
+Public procurement evaluation is frequently opaque \dots
+\end{abstract}
+
+\begin{IEEEkeywords}
+audit trail, decision support systems, explainable systems,
+multi-criteria decision making, public procurement, simple additive
+weighting
+\end{IEEEkeywords}
+
+%---------------------------------------------------------------------
+\section{Introduction}
+\label{sec:intro}
+
+% Problem context: opacity and inconsistency in manual tender evaluation.
+% Motivation: reproducibility and explainability as governance requirements.
+% Objectives.
+
+The contributions of this work are:
+
+\begin{itemize}
+\item A two-layer evaluation model combining non-compensatory rule-based
+      screening with compensatory weighted aggregation.
+\item A configuration-snapshot mechanism providing verifiable
+      reproducibility of historical evaluations.
+\item An explicit data-provenance model that surfaces the reliability of
+      each input rather than absorbing it into the arithmetic.
+\item A taxonomy of criterion verifiability distinguishing
+      registry-verifiable attributes from forward-looking commitments.
+\end{itemize}
+
+The remainder of this paper is organised as follows.
+Section~\ref{sec:related} reviews related work \dots
+
+%---------------------------------------------------------------------
+\section{Related Work}
+\label{sec:related}
+
+% MCDM for supplier selection: SAW, AHP, TOPSIS.
+% Fuzzy / grey methods for uncertain input data.
+% E-procurement transparency.
+%
+% Positioning statement (important):
+% Existing approaches address input uncertainty through fuzzy or grey
+% modelling, at the cost of exact reproducibility. This work retains
+% crisp determinism and instead makes data provenance explicit.
+
+%---------------------------------------------------------------------
+\section{System Architecture}
+\label{sec:arch}
+
+AGPS was created as a rule-based procurement evaluation system where the
+decision process is split into stages. The architecture separates
+eligibility screening from the later ranking of eligible bids. This split
+stops a bidder from making up for a missing requirement by doing well in
+other evaluation criteria. I find this design clear and fair.
+
+\subsection{Two-Layer Decision Model}
+\label{subsec:two-layer}
+
+The evaluation process has two layers. The first layer does eligibility
+screening with procurement rules. Each rule is checked separately for
+every submitted bid. If a bid breaks one or more rules it is marked as
+ineligible. The screening does not stop after the failure; instead all
+failed rules are gathered and returned so that the bidder and the
+procuring entity can see all eligibility problems.
+
+The eligibility layer is therefore non-compensatory. A bidder that fails
+a requirement cannot regain eligibility by scoring higher on price,
+quality, delivery, experience or any other criterion.
+
+The second layer ranks bids that have passed the eligibility screening.
+This layer uses Simple Additive Weighting (SAW). Each criterion is put on
+a scale and multiplied by its set weight. The weighted values are added
+together to give the score. I appreciate how the ranking layer lets
+strong points balance ones.
+
+The ranking layer is compensatory because a strong result on one
+criterion can balance a result on another based on the declared weights.
+This design matches procurement rules where mandatory conditions are kept
+separate from the comparison of financially acceptable bids
+\cite{ref1}, \cite{ref2}.
+% [CITE ref1: Government of India, General Financial Rules 2017]
+% [CITE ref2: CVC two-envelope evaluation practice]
+
+\begin{figure}[htbp]
+\centerline{\includegraphics[width=\columnwidth]{fig1_workflow.pdf}}
+\caption{AGPS two-layer evaluation workflow showing bid submission
+$\rightarrow$ eligibility screening $\rightarrow$ eligible bids
+$\rightarrow$ criterion normalization $\rightarrow$ weighted aggregation
+$\rightarrow$ deterministic ranking $\rightarrow$ award decision.}
+\label{fig:workflow}
+\end{figure}
+
+\subsection{Generic Criterion Architecture}
+\label{subsec:generic}
+
+The scoring engine was built to work without being tied to procurement
+criteria. Criteria are set up as configuration of being hard-coded into
+the evaluation logic. Each criterion lists its preference direction,
+weight and source of its value.
+
+The system supports four types of value sources: \texttt{BID\_FIELD},
+\texttt{VENDOR\_FIELD}, \texttt{TECHNICAL\_VALUE} and
+\texttt{DERIVED\_QUALITY}. This lets criteria get values from a bid, from
+the vendor profile, from technical evaluation data or from a
+deterministic quality-derivation process.
+
+The default setup has four criteria: price at 40\%, quality at 30\%,
+delivery at 20\% and experience at 10\%. Price and delivery are
+lower-is-better while quality and experience are higher-is-better.
+
+Because criteria are driven by configuration the evaluation engine does
+not have logic for each procurement attribute. A demo tender with six
+criteria, such as Warranty and Maintenance Support, was evaluated without
+changing the evaluation engine. This design lets the same calculation
+process be used for tenders that have different evaluation structures.
+
+\subsection{Configuration Snapshot and Graduated Locking}
+\label{subsec:locking}
+
+To stop evaluation rules from changing after bidders have made their
+submissions AGPS uses a graduated locking mechanism. A tender starts in
+the \texttt{UNLOCKED} state, where its configuration can be edited
+freely.
+
+After publication but before any bid arrives the tender moves to the
+\texttt{SOFT\_LOCKED} state. In this state changes can still happen. They
+are versioned and logged in the audit trail.
+
+The first bid that comes in causes a move to the \texttt{HARD\_LOCKED}
+state. From then on the tender configuration cannot change. Big changes
+after bids are in place need the tender to be cancelled and re-issued,
+not just the evaluation rules altered.
+
+This system makes it clear that no bidder is judged by rules that were
+changed after that bidder made a bid.
+
+\subsection{Determinism Contract}
+\label{subsec:determinism}
+
+AGPS uses ways to make the evaluation repeatable. Before bidding the full
+tender configuration is taken as a snapshot. A \texttt{configHash} is
+then computed with SHA-256 over the key-sorted JSON version of that
+snapshot.
+
+The ranking process adds values in a fixed order of criteria. The
+calculation is done with float64 precision and rounding to two decimal
+places happens only when the result is shown. This keeps display rounding
+from changing the math.
+
+If two or more eligible bidders have the final score AGPS uses a set
+six-step tie-breaking chain:
+
+\begin{enumerate}
+\item Higher final score.
+\item Price.
+\item Higher quality.
+\item Lower delivery time.
+\item Earlier submission time.
+\item Lower bid identifier.
+\end{enumerate}
+
+The last criterion, bid identifier, guarantees that the ordering ends in
+an order.
+
+The evaluation functions are pure. Have no access to storage, system
+time, randomness or outside input. As a result with the frozen
+configuration and the same bids the engine will give the same scores and
+ordering.
+
+\begin{figure}[htbp]
+\centerline{\includegraphics[width=\columnwidth]{fig2_determinism.pdf}}
+\caption{Determinism contract showing configuration snapshot, canonical
+JSON, SHA-256 \texttt{configHash}, pure evaluation engine, fixed
+accumulation order and six-level tie-breaking cascade.}
+\label{fig:determinism}
+\end{figure}
+
+\subsection{Data Provenance and Financial Sealing}
+\label{subsec:provenance}
+
+AGPS separates processing from checking the information that vendors
+submit. In particular technical and quality data stay vendor-declared and
+unverified. These values have a provenance record that shows their source
+is \texttt{SELF\_REPORTED} and their verification status is
+\texttt{UNVERIFIED}. The system has no way to change those values to
+\texttt{VERIFIED}.
+
+Financial data is also protected by a two-envelope sealing method.
+Financial values cannot be seen through the API by administrators until
+the tender gets to the financial-open stage. This split stops data from
+being shown before the right part of the process.
+
+The system also keeps an audit log. Every entry is added to a per-tender
+SHA-256 hash chain that uses the hash and the canonical form of the
+current entry. This system shows if something was changed. It does not
+stop an authorized or very privileged person from changing the stored
+data.
+
+%---------------------------------------------------------------------
+\section{Evaluation Methodology}
+\label{sec:method}
+
+\subsection{Eligibility Screening}
+
+Let $R$ denote the set of enabled eligibility rules and $b$ a bid. The
+screening function returns every violated rule rather than
+short-circuiting on the first failure:
+
+\begin{equation}
+F(b) = \{\, r \in R \;:\; \neg\,\mathrm{satisfies}(b, r) \,\}
+\label{eq:eligibility}
+\end{equation}
+
+A bid is eligible if and only if $F(b) = \emptyset$.
+
+\subsection{Quality Derivation}
+
+For a technical criterion $j$ with allocated points $p_j$, the earned
+points depend on the declared value $v_j$ and the criterion type. For a
+numeric criterion bounded by $[\,\ell_j, u_j\,]$:
+
+\begin{equation}
+t_j = \mathrm{clamp}\!\left(\frac{v_j - \ell_j}{u_j - \ell_j},\, 0,\, 1\right)
+\label{eq:numeric-t}
+\end{equation}
+
+\begin{equation}
+e_j =
+\begin{cases}
+p_j \, t_j, & \text{higher-is-better} \\[2pt]
+p_j (1 - t_j), & \text{lower-is-better}
+\end{cases}
+\label{eq:earned}
+\end{equation}
+
+The derived quality score is $Q = \sum_j e_j$, where
+$\sum_j p_j = 100$ by construction, so $Q \in [0, 100]$.
+
+\subsection{Normalization}
+
+Let $C$ be the cohort of eligible bids and $x_i$ the raw value of bid $i$
+for a given criterion, with $x_{\min} = \min_{k \in C} x_k$ and
+$x_{\max} = \max_{k \in C} x_k$. The normalized score is:
+
+\begin{equation}
+n_i =
+\begin{cases}
+100, & x_{\max} = x_{\min} \\[3pt]
+\dfrac{x_{\min}}{x_i} \times 100, & \text{lower-is-better} \\[8pt]
+\dfrac{x_i}{x_{\max}} \times 100, & \text{higher-is-better}
+\end{cases}
+\label{eq:normalize}
+\end{equation}
+
+The first case is a degeneracy guard: when a criterion does not
+discriminate between bids it contributes uniformly rather than producing
+an undefined quotient.
+
+\subsection{Weighted Aggregation}
+
+With integer weights $w_c$ satisfying $\sum_c w_c = 100$:
+
+\begin{equation}
+S_i = \sum_{c \in \mathcal{C}} n_{i,c} \cdot \frac{w_c}{100}
+\label{eq:final}
+\end{equation}
+
+Summation follows the frozen order of $\mathcal{C}$, fixing
+floating-point accumulation and yielding bit-identical results across
+executions.
+
+\subsection{Tie-Breaking}
+
+Ranking applies a lexicographic cascade terminating in the bid
+identifier, guaranteeing a total order \dots
+
+%---------------------------------------------------------------------
+\section{Implementation}
+\label{sec:impl}
+
+%---------------------------------------------------------------------
+\section{Results}
+\label{sec:results}
+
+\begin{table}[htbp]
+\caption{Score Breakdown for the Verification Vector}
+\begin{center}
+\begin{tabular}{lrrrr}
+\toprule
+\textbf{Criterion} & \textbf{Raw} & \textbf{Norm.} &
+\textbf{Weight} & \textbf{Weighted} \\
+\midrule
+Price       & 800{,}000 & 92.50 & 40 & 37.00 \\
+Quality     & 85        & 85.00 & 30 & 25.50 \\
+Delivery    & 20        & 75.00 & 20 & 15.00 \\
+Experience  & 8         & 80.00 & 10 &  8.00 \\
+\midrule
+\textbf{Total} & & & \textbf{100} & \textbf{85.50} \\
+\bottomrule
+\end{tabular}
+\label{tab:golden}
+\end{center}
+\end{table}
+
+\begin{table}[htbp]
+\caption{Effect of Weight Configuration on Outcome (Identical Bid Data)}
+\begin{center}
+\begin{tabular}{lcc}
+\toprule
+ & \textbf{Config. A} & \textbf{Config. B} \\
+\midrule
+Price / Quality / Delivery / Exp. & 40/30/20/10 & 20/50/20/10 \\
+Winning bidder & [NAME] & [NAME] \\
+Winning score  & [VALUE] & [VALUE] \\
+\bottomrule
+\end{tabular}
+\label{tab:flip}
+\end{center}
+\end{table}
+
+%---------------------------------------------------------------------
+\section{Discussion and Threats to Validity}
+\label{sec:threats}
+
+% (a) self-reported, unverified inputs
+% (b) criterion verifiability taxonomy
+% (c) compensatory aggregation
+% (d) tamper-evident, not tamper-proof
+% (e) seeded rather than live data
+
+%---------------------------------------------------------------------
+\section{Conclusion and Future Work}
+\label{sec:conclusion}
+
+%---------------------------------------------------------------------
+% REFERENCES
+% Option A (manual): use the thebibliography block below.
+% Option B (BibTeX): delete the block, create refs.bib, and use:
+%   \bibliographystyle{IEEEtran}
+%   \bibliography{refs}
+
+\begin{thebibliography}{00}
+
+\bibitem{ref1}
+% Journal article:
+% A. B. Author, C. D. Author, ``Title of paper,'' \emph{Journal Name},
+% vol. 1, no. 2, pp. 100--110, 2020.
+
+\bibitem{ref2}
+% Conference paper:
+% A. B. Author, ``Title of paper,'' in \emph{Proc. Conf. Name}, City,
+% Country, 2021, pp. 1--6.
+
+\bibitem{ref3}
+% Government document:
+% Ministry of Finance, Government of India, \emph{General Financial
+% Rules 2017}, New Delhi, India, 2017.
+
+\bibitem{ref4}
+% Book:
+% A. B. Author, \emph{Title of Book}, 2nd ed. City: Publisher, 2019.
+
+\bibitem{ref5}
+% Online:
+% Government e-Marketplace. (2024) \emph{GeM Documentation}. [Online].
+% Available: https://gem.gov.in
+
+\end{thebibliography}
+
+\end{document}

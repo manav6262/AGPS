@@ -750,4 +750,71 @@ describe('AGPS Pure Engines — Tests 1–20 (SPEC §22)', () => {
     const valValid = validateScoringCriteria(defaultScoringCriteria);
     expect(valValid.valid).toBe(true);
   });
+
+  it('Golden Test Vector: reproduces expected final score across full evaluation pipeline', () => {
+    // 1. Fixed Configuration
+    const techCriteria: TechnicalCriterion[] = [
+      { key: 'tech_score', type: 'numeric', min: 0, max: 100, points: 100, direction: 'higher', label: 'Tech Score' }
+    ];
+
+    const snapshot: TenderConfigSnapshot = {
+      ...defaultSnapshot,
+      technicalCriteria: techCriteria,
+    };
+
+    // 2. Fixed Bid Data (Cohort of 3)
+    const bidA: BidContext = { // Golden Bid
+      bidId: 'golden-bid-a',
+      vendorId: 'vendor-a',
+      vendorName: 'Golden Vendor A',
+      submittedAt: '2026-03-01T10:00:00Z',
+      priceMinor: 10000000, // ₹1,00,000
+      deliveryDays: 20,
+      vendorSnapshot: { experienceYears: 5, annualTurnoverMinor: 10000000, isBlacklisted: false },
+      technicalValues: { tech_score: 80 },
+      // derivedQualityScore is intentionally omitted so the engine derives it
+    };
+
+    const bidB: BidContext = { // Sets Price Min & Experience Max
+      bidId: 'bid-b',
+      vendorId: 'vendor-b',
+      vendorName: 'Vendor B',
+      submittedAt: '2026-03-01T10:05:00Z',
+      priceMinor: 8000000, // ₹80,000 (Min Price)
+      deliveryDays: 25,
+      vendorSnapshot: { experienceYears: 10, annualTurnoverMinor: 10000000, isBlacklisted: false }, // Max Experience
+      technicalValues: { tech_score: 75 },
+    };
+
+    const bidC: BidContext = { // Sets Quality Max & Delivery Min
+      bidId: 'bid-c',
+      vendorId: 'vendor-c',
+      vendorName: 'Vendor C',
+      submittedAt: '2026-03-01T10:10:00Z',
+      priceMinor: 9000000,
+      deliveryDays: 10, // Min Delivery
+      vendorSnapshot: { experienceYears: 3, annualTurnoverMinor: 10000000, isBlacklisted: false },
+      technicalValues: { tech_score: 100 }, // Max Quality
+    };
+
+    // 3. Execute the full pure evaluation pipeline
+    const output = evaluateTenderPure([bidA, bidB, bidC], snapshot);
+
+    // 4. Verification
+    expect(output.summary.outcome).toBe('RANKED');
+    expect(output.summary.eligibleCount).toBe(3);
+    
+    const resultA = output.results.find((r) => r.bidId === 'golden-bid-a')!;
+    expect(resultA).toBeDefined();
+    expect(resultA.eligible).toBe(true);
+    
+    // Expected Contributions for Bid A:
+    // Price (40%): (8,000,000 / 10,000,000) * 100 = 80.00 => 80.00 * 0.40 = 32.00
+    // Quality (30%): (80 / 100) * 100 = 80.00 => 80.00 * 0.30 = 24.00
+    // Delivery (20%): (10 / 20) * 100 = 50.00 => 50.00 * 0.20 = 10.00
+    // Experience (10%): (5 / 10) * 100 = 50.00 => 50.00 * 0.10 = 5.00
+    // Total Expected Score = 71.00
+    
+    expect(resultA.finalScore).toBeCloseTo(71.00, 6);
+  });
 });
