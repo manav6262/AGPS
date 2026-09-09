@@ -5,9 +5,10 @@
  */
 
 // In development this stays '/api' and is proxied to localhost:5000 by Vite.
-// In production VITE_API_URL points at the deployed API origin.
+// In production VITE_API_URL points at the deployed API origin (e.g. https://agps-server.vercel.app or https://agps-server.vercel.app/api).
 // Do NOT set VITE_API_URL in a local .env file — it would bypass the proxy.
-const API_BASE = import.meta.env.VITE_API_URL ?? '/api';
+const rawApiBase = (import.meta.env.VITE_API_URL?.trim() || '/api').replace(/\/+$/, '');
+const API_BASE = rawApiBase.endsWith('/api') ? rawApiBase : `${rawApiBase}/api`;
 
 let currentAccessToken: string | null = localStorage.getItem('agps_token');
 
@@ -201,7 +202,7 @@ export const api = {
   // Bids
   bids: {
     getMyBids: () =>
-      request('/bids/me'),
+      request('/bids/mine'),
     getById: (id: string) =>
       request(`/bids/${id}`),
   },

@@ -3,23 +3,28 @@ import { Link } from 'react-router-dom';
 import { api } from '../services/api.js';
 import { IBid } from '@agps/shared';
 import { ProvenanceBadge } from '../components/common/ProvenanceBadge.js';
-import { Send, Eye, FileText } from 'lucide-react';
+import { Send, Eye, FileText, AlertCircle, RefreshCw } from 'lucide-react';
 
 export const VendorBids: React.FC = () => {
   const [bids, setBids] = useState<IBid[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const loadBids = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await api.bids.getMyBids();
+      setBids(res.bids || []);
+    } catch (err: any) {
+      console.error('Failed to load my bids', err);
+      setError(err?.message || 'Failed to load your submitted bids. Please check your connection or authentication.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    async function loadBids() {
-      try {
-        const res = await api.bids.getMyBids();
-        setBids(res.bids || []);
-      } catch (err) {
-        console.error('Failed to load my bids', err);
-      } finally {
-        setLoading(false);
-      }
-    }
     loadBids();
   }, []);
 
@@ -39,6 +44,27 @@ export const VendorBids: React.FC = () => {
         {loading ? (
           <div className="p-8 text-center text-xs text-stone-500 font-mono" role="status" aria-live="polite">
             Loading your submitted proposals...
+          </div>
+        ) : error ? (
+          <div className="p-8 text-center space-y-3" role="alert" aria-live="assertive">
+            <div className="w-10 h-10 rounded-full bg-status-failedBg border border-status-failedBorder flex items-center justify-center mx-auto text-status-failedText">
+              <AlertCircle className="w-5 h-5" />
+            </div>
+            <div>
+              <h2 className="text-sm font-bold text-stone-800">Failed to Load Submitted Bids</h2>
+              <p className="text-xs text-stone-500 mt-0.5 max-w-md mx-auto">
+                {error}
+              </p>
+            </div>
+            <div className="pt-1">
+              <button
+                onClick={loadBids}
+                className="btn-secondary text-xs inline-flex items-center gap-1.5"
+              >
+                <RefreshCw className="w-3.5 h-3.5" />
+                <span>Retry</span>
+              </button>
+            </div>
           </div>
         ) : bids.length === 0 ? (
           <div className="p-8 text-center space-y-3" role="status" aria-live="polite">
@@ -85,7 +111,7 @@ export const VendorBids: React.FC = () => {
                         {typeof b.tender === 'object' ? (b.tender as any).title : ''}
                       </div>
                     </td>
-                    <td className="font-mono text-xs text-stone-700 whitespace-nowrap">{b._id.slice(-8)}</td>
+                    <td className="font-mono text-xs text-stone-700 whitespace-nowrap">{String(b._id).slice(-8)}</td>
                     <td className="font-mono text-xs text-center">
                       <span className="bg-stone-100 px-1.5 py-0.5 rounded-sm border border-stone-200">
                         v{b.revision} {b.isLatest ? '(Latest)' : '(Archived)'}
@@ -96,10 +122,13 @@ export const VendorBids: React.FC = () => {
                         ? `₹${(b.priceMinor / 100).toLocaleString('en-IN')}`
                         : 'SEALED'}
                     </td>
-                    <td className="font-mono text-xs">{b.deliveryDays?.value || (b.deliveryDays as any)} Days</td>
+                    <td className="font-mono text-xs">{b.deliveryDays?.value ?? (b.deliveryDays as any)} Days</td>
                     <td className="font-mono text-xs">{b.derivedQualityScore}/100</td>
                     <td>
-                      <ProvenanceBadge status="SELF_REPORTED" source="PORTAL" />
+                      <ProvenanceBadge
+                        status={b.deliveryDays?.provenance?.verificationStatus || 'SELF_REPORTED'}
+                        source={b.deliveryDays?.provenance?.source || 'PORTAL'}
+                      />
                     </td>
                     <td className="text-xs text-stone-600 whitespace-nowrap">
                       {new Date(b.submittedAt).toLocaleString('en-IN')}

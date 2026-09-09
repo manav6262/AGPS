@@ -291,4 +291,97 @@ describe('AGPS Phase 5 — Vendors, Bids, and Sealed Envelopes', () => {
     expect(zeroDeliveryRes.status).toBe(400);
     expect(zeroDeliveryRes.body.error).toBe('VALIDATION_ERROR');
   });
+
+  it('GET /api/bids/mine: returns vendor bids with unsealed price, populated tender, and strict vendor isolation', async () => {
+    const tender = await createAndPublishTender();
+
+    // 1. Create a second vendor (Vendor B)
+    const vendorB = await User.create({
+      email: 'vendor_b_test@corp.in',
+      passwordHash: await hashPassword('password123'),
+      role: 'VENDOR',
+      name: 'Vendor Beta User',
+    });
+    const vendorBToken = generateAccessToken({
+      userId: vendorB._id.toString(),
+      role: 'VENDOR',
+      email: vendorB.email,
+      name: vendorB.name,
+    });
+    await VendorProfile.create({
+      user: vendorB._id,
+      companyName: 'Beta Dynamics Pvt Ltd',
+      registrationNo: 'REG-99999',
+      gstin: '07BBBBB2222B2Z2',
+      address: 'Mumbai',
+      contactPhone: '9811111111',
+      experienceYears: 4,
+      annualTurnoverMinor: 6000000000,
+      isBlacklisted: false,
+      provenance: { ...DEFAULT_PROVENANCE },
+    });
+
+    // 2. Vendor A submits a bid
+    const bidARes = await request(app)
+      .post(`/api/tenders/${tender._id}/bids`)
+      .set('Authorization', `Bearer ${vendorToken}`)
+      .send({
+        priceMinor: 62000000,
+        deliveryDays: 12,
+      });
+    expect(bidARes.status).toBe(201);
+    const bidAId = bidARes.body.bid._id;
+
+    // 3. Vendor B submits a bid for the same tender
+    const bidBRes = await request(app)
+      .post(`/api/tenders/${tender._id}/bids`)
+      .set('Authorization', `Bearer ${vendorBToken}`)
+      .send({
+        priceMinor: 58000000,
+        deliveryDays: 15,
+      });
+    expect(bidBRes.status).toBe(201);
+    const bidBId = bidBRes.body.bid._id;
+
+    // 4. Vendor A queries /api/bids/mine
+    const mineARes = await request(app)
+      .get('/api/bids/mine')
+      .set('Authorization', `Bearer ${vendorToken}`);
+
+    expect(mineARes.status).toBe(200);
+    expect(mineARes.body.bids).toBeInstanceOf(Array);
+    expect(mineARes.body.bids).toHaveLength(1);
+
+    const bidA = mineARes.body.bids[0];
+    expect(bidA._id).toBe(bidAId);
+    // Price must be visible to submitting vendor
+    expect(bidA.priceMinor).toBe(62000000);
+    // Tender details must be populated
+    expect(bidA.tender).toBeDefined();
+    expect(bidA.tender.tenderCode).toBe(tender.tenderCode);
+    expect(bidA.tender.title).toBe(tender.title);
+    expect(bidA.tender.status).toBe('BIDDING_OPEN');
+
+    // 5. Vendor B queries /api/bids/mine -> must only receive Vendor B's bid
+    const mineBRes = await request(app)
+      .get('/api/bids/mine')
+      .set('Authorization', `Bearer ${vendorBToken}`);
+
+    expect(mineBRes.status).toBe(200);
+    expect(mineBRes.body.bids).toHaveLength(1);
+    const bidB = mineBRes.body.bids[0];
+    expect(bidB._id).toBe(bidBId);
+    expect(bidB.priceMinor).toBe(58000000);
+    expect(bidB._id).not.toBe(bidAId);
+
+    // 6. Security: Unauthenticated request must return 401
+    const unauthRes = await request(app).get('/api/bids/mine');
+    expect(unauthRes.status).toBe(401);
+
+    // 7. Security: Admin role must return 403 (restricted to VENDOR)
+    const adminRes = await request(app)
+      .get('/api/bids/mine')
+      .set('Authorization', `Bearer ${adminToken}`);
+    expect(adminRes.status).toBe(403);
+  });
 });
