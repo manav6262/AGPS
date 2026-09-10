@@ -7,7 +7,17 @@ import { ScoringCriterion, TechnicalCriterion } from './criteria.js';
 import { EligibilityRule } from './rules.js';
 import { Provenance } from './provenance.js';
 
-export type UserRole = 'ADMIN' | 'VENDOR' | 'AUDITOR';
+export type UserRole = 'ADMIN' | 'SUPER_ADMIN' | 'PROCUREMENT_OFFICER' | 'VENDOR' | 'AUDITOR';
+
+export interface IDepartment {
+  _id: string;
+  name: string;
+  code: string;
+  description: string;
+  isActive: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
 
 export type TenderStatus =
   | 'DRAFT'
@@ -26,6 +36,11 @@ export interface IUser {
   email: string;
   role: UserRole;
   name: string;
+  departmentId?: string;
+  department?: IDepartment;
+  isActive?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface IVendorProfile {
@@ -48,6 +63,8 @@ export interface ITender {
   title: string;
   description: string;
   department: string;
+  departmentId?: string;
+  assignedOfficerId?: string;
   category: string;
   status: TenderStatus;
   configLockState: ConfigLockState;

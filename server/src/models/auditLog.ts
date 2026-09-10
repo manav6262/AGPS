@@ -28,13 +28,17 @@ export const AUDIT_ACTIONS = [
   'WINNER_OVERRIDDEN',
   'TENDER_CLOSED',
   'VENDOR_BLACKLISTED',
+  'OFFICER_CREATED',
+  'OFFICER_DEPARTMENT_CHANGED',
+  'OFFICER_ACTIVATED',
+  'OFFICER_DEACTIVATED',
 ] as const;
 
 export type AuditAction = (typeof AUDIT_ACTIONS)[number];
 
 export interface IAuditLog extends Document {
   _id: Types.ObjectId;
-  tender: Types.ObjectId;
+  tender: Types.ObjectId | null;
   seq: number;
   timestamp: Date;
   actor: Types.ObjectId;
@@ -56,7 +60,7 @@ export function computeAuditHash(entry: {
   timestamp: Date | string;
   actorId: string;
   action: string;
-  tenderId: string;
+  tenderId: string | null;
   vendorId: string | null;
   description: string;
   payload: Record<string, any>;
@@ -67,7 +71,7 @@ export function computeAuditHash(entry: {
     timestamp: entry.timestamp instanceof Date ? entry.timestamp.toISOString() : entry.timestamp,
     actorId: entry.actorId,
     action: entry.action,
-    tenderId: entry.tenderId,
+    tenderId: entry.tenderId || 'SYSTEM',
     vendorId: entry.vendorId,
     description: entry.description,
     payload: entry.payload ?? {},
@@ -83,7 +87,7 @@ const auditLogSchema = new Schema<IAuditLog>(
     tender: {
       type: Schema.Types.ObjectId,
       ref: 'Tender',
-      required: true,
+      default: null,
       index: true,
     },
     seq: {

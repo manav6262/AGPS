@@ -100,6 +100,7 @@ export async function login(req: Request, res: Response, next: NextFunction): Pr
 
     const user = await User.findOne({ email: data.email.toLowerCase() })
       .select('+passwordHash')
+      .populate('departmentId')
       .exec();
 
     if (!user || !user.isActive) {
@@ -119,11 +120,16 @@ export async function login(req: Request, res: Response, next: NextFunction): Pr
       return;
     }
 
+    const deptId = user.departmentId
+      ? ((user.departmentId as any)._id ? (user.departmentId as any)._id.toString() : user.departmentId.toString())
+      : undefined;
+
     const tokenPayload = {
       userId: user._id.toString(),
       role: user.role,
       email: user.email,
       name: user.name,
+      departmentId: deptId,
     };
 
     const accessToken = generateAccessToken(tokenPayload);
@@ -137,6 +143,8 @@ export async function login(req: Request, res: Response, next: NextFunction): Pr
         email: user.email,
         name: user.name,
         role: user.role,
+        departmentId: deptId,
+        department: (user.departmentId as any)?.name ? user.departmentId : undefined,
       },
       accessToken,
     });
@@ -167,11 +175,14 @@ export async function refresh(req: Request, res: Response, _next: NextFunction):
       return;
     }
 
+    const deptId = user.departmentId ? user.departmentId.toString() : undefined;
+
     const tokenPayload = {
       userId: user._id.toString(),
       role: user.role,
       email: user.email,
       name: user.name,
+      departmentId: deptId,
     };
 
     const newAccessToken = generateAccessToken(tokenPayload);
@@ -209,7 +220,7 @@ export async function me(req: Request, res: Response, next: NextFunction): Promi
       return;
     }
 
-    const user = await User.findById(req.user.id).exec();
+    const user = await User.findById(req.user.id).populate('departmentId').exec();
     if (!user) {
       res.status(404).json({ error: 'NOT_FOUND', message: 'User not found' });
       return;
@@ -220,12 +231,18 @@ export async function me(req: Request, res: Response, next: NextFunction): Promi
       vendorProfile = await VendorProfile.findOne({ user: user._id }).exec();
     }
 
+    const deptId = user.departmentId
+      ? ((user.departmentId as any)._id ? (user.departmentId as any)._id.toString() : user.departmentId.toString())
+      : undefined;
+
     res.status(200).json({
       user: {
         id: user._id,
         email: user.email,
         name: user.name,
         role: user.role,
+        departmentId: deptId,
+        department: (user.departmentId as any)?.name ? user.departmentId : undefined,
         createdAt: user.createdAt,
       },
       vendorProfile,

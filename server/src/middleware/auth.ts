@@ -48,6 +48,10 @@ export function authenticateToken(
 }
 
 export function requireRole(...allowedRoles: UserRole[]) {
+  const effectiveAllowedRoles = new Set<UserRole>(allowedRoles);
+  if (effectiveAllowedRoles.has('ADMIN')) effectiveAllowedRoles.add('SUPER_ADMIN');
+  if (effectiveAllowedRoles.has('SUPER_ADMIN')) effectiveAllowedRoles.add('ADMIN');
+
   return (req: Request, res: Response, next: NextFunction): void => {
     if (!req.user) {
       res.status(401).json({
@@ -57,7 +61,7 @@ export function requireRole(...allowedRoles: UserRole[]) {
       return;
     }
 
-    if (!allowedRoles.includes(req.user.role)) {
+    if (!effectiveAllowedRoles.has(req.user.role)) {
       res.status(403).json({
         error: 'FORBIDDEN',
         message: `Forbidden: requires one of [${allowedRoles.join(', ')}] role`,

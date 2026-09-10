@@ -28,9 +28,10 @@ describe('AGPS Phase 8 — Seed Data and Full State Verification', () => {
 
     // 1. Verify Users & Roles
     const users = await User.find();
-    expect(users).toHaveLength(7); // 1 Admin + 1 Auditor + 5 Vendors
-    expect(users.filter((u) => u.role === 'ADMIN')).toHaveLength(1);
+    expect(users).toHaveLength(10); // 1 Admin/Super Admin + 1 Auditor + 3 Procurement Officers + 5 Vendors
+    expect(users.filter((u) => u.role === 'ADMIN' || u.role === 'SUPER_ADMIN')).toHaveLength(1);
     expect(users.filter((u) => u.role === 'AUDITOR')).toHaveLength(1);
+    expect(users.filter((u) => u.role === 'PROCUREMENT_OFFICER')).toHaveLength(3);
     expect(users.filter((u) => u.role === 'VENDOR')).toHaveLength(5);
 
     // 2. Verify all seeded tenders

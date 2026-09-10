@@ -4,7 +4,7 @@
 
 import { Schema, model, Document, Types } from 'mongoose';
 
-export type UserRole = 'ADMIN' | 'VENDOR' | 'AUDITOR';
+export type UserRole = 'ADMIN' | 'SUPER_ADMIN' | 'PROCUREMENT_OFFICER' | 'VENDOR' | 'AUDITOR';
 
 export interface IUser extends Document {
   _id: Types.ObjectId;
@@ -12,6 +12,7 @@ export interface IUser extends Document {
   passwordHash: string;
   role: UserRole;
   name: string;
+  departmentId?: Types.ObjectId | null;
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -34,13 +35,19 @@ const userSchema = new Schema<IUser>(
     },
     role: {
       type: String,
-      enum: ['ADMIN', 'VENDOR', 'AUDITOR'],
+      enum: ['ADMIN', 'SUPER_ADMIN', 'PROCUREMENT_OFFICER', 'VENDOR', 'AUDITOR'],
       required: true,
     },
     name: {
       type: String,
       required: true,
       trim: true,
+    },
+    departmentId: {
+      type: Schema.Types.ObjectId,
+      ref: 'Department',
+      default: null,
+      index: true,
     },
     isActive: {
       type: Boolean,

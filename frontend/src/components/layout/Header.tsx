@@ -41,6 +41,11 @@ export const Header: React.FC = () => {
                   {user.role === 'VENDOR' && vendorProfile && (
                     <span className="font-mono">{vendorProfile.companyName} | </span>
                   )}
+                  {user.role === 'PROCUREMENT_OFFICER' && user.department && (
+                    <span className="font-medium text-stone-200">
+                      {typeof user.department === 'object' ? user.department.name : user.department} |{' '}
+                    </span>
+                  )}
                   <span>{user.email}</span>
                 </div>
               </div>

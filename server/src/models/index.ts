@@ -9,3 +9,4 @@ export * from './tender.js';
 export * from './bid.js';
 export * from './evaluation.js';
 export * from './auditLog.js';
+export * from './department.js';

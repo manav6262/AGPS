@@ -9,6 +9,7 @@ import { Types } from 'mongoose';
 import { Tender } from '../models/tender.js';
 import { Bid } from '../models/bid.js';
 import { User } from '../models/user.js';
+import { Department } from '../models/department.js';
 import { AppError } from './tenderService.js';
 import { evaluateTenderPure } from '../engines/evaluationEngine.js';
 import {
@@ -412,12 +413,66 @@ export async function generateTenderReportCsv(tenderId: string): Promise<string>
 /**
  * Dashboard Summary Counts & Metrics
  */
-export async function getDashboardSummary() {
-  const [totalTenders, activeTenders, evaluatedTenders, closedTenders, totalVendors, totalBids, recentTenders] =
+export async function getDashboardSummary(user?: { id: string; role: string; departmentId?: string }) {
+  if (user?.role === 'PROCUREMENT_OFFICER') {
+    let officerDeptId = user.departmentId;
+    if (!officerDeptId) {
+      const u = await User.findById(user.id);
+      officerDeptId = u?.departmentId?.toString();
+    }
+
+    const dept = officerDeptId ? await Department.findById(officerDeptId) : null;
+    const tenderFilter: Record<string, any> = officerDeptId
+      ? {
+          $or: [
+            { departmentId: new Types.ObjectId(officerDeptId) },
+            ...(dept ? [{ department: dept.name }] : []),
+          ],
+        }
+      : { _id: null };
+
+    const deptTenders = await Tender.find(tenderFilter).select('_id').exec();
+    const deptTenderIds = deptTenders.map((t) => t._id);
+
+    const [
+      totalTenders,
+      activeTenders,
+      draftTenders,
+      evaluatedTenders,
+      closedTenders,
+      totalVendors,
+      totalBids,
+      recentTenders,
+    ] = await Promise.all([
+      Tender.countDocuments(tenderFilter),
+      Tender.countDocuments({ ...tenderFilter, status: { $in: ['PUBLISHED', 'BIDDING_OPEN'] } }),
+      Tender.countDocuments({ ...tenderFilter, status: 'DRAFT' }),
+      Tender.countDocuments({ ...tenderFilter, status: { $in: ['EVALUATED', 'WINNER_SELECTED', 'UNDER_EVALUATION'] } }),
+      Tender.countDocuments({ ...tenderFilter, status: 'CLOSED' }),
+      Bid.find({ tender: { $in: deptTenderIds } }).distinct('vendor').then((v) => v.length),
+      Bid.countDocuments({ tender: { $in: deptTenderIds }, isLatest: true }),
+      Tender.find(tenderFilter).sort({ createdAt: -1 }).limit(5).exec(),
+    ]);
+
+    return {
+      totalTenders,
+      activeTenders,
+      draftTenders,
+      evaluatedTenders,
+      closedTenders,
+      totalVendors,
+      totalBids,
+      recentTenders,
+      department: dept ? { _id: dept._id, name: dept.name, code: dept.code } : null,
+    };
+  }
+
+  const [totalTenders, activeTenders, draftTenders, evaluatedTenders, closedTenders, totalVendors, totalBids, recentTenders] =
     await Promise.all([
       Tender.countDocuments(),
-      Tender.countDocuments({ status: 'BIDDING_OPEN' }),
-      Tender.countDocuments({ status: { $in: ['EVALUATED', 'WINNER_SELECTED'] } }),
+      Tender.countDocuments({ status: { $in: ['PUBLISHED', 'BIDDING_OPEN'] } }),
+      Tender.countDocuments({ status: 'DRAFT' }),
+      Tender.countDocuments({ status: { $in: ['EVALUATED', 'WINNER_SELECTED', 'UNDER_EVALUATION'] } }),
       Tender.countDocuments({ status: 'CLOSED' }),
       User.countDocuments({ role: 'VENDOR' }),
       Bid.countDocuments({ isLatest: true }),
@@ -427,6 +482,7 @@ export async function getDashboardSummary() {
   return {
     totalTenders,
     activeTenders,
+    draftTenders,
     evaluatedTenders,
     closedTenders,
     totalVendors,

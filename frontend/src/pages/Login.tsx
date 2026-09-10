@@ -95,10 +95,10 @@ export const Login: React.FC = () => {
             </button>
           </form>
 
-          {/* Quick Demo Logins for Pair Review & Evaluation */}
+          {/* Quick Demo Logins for Evaluation & Pair Review */}
           <div className="mt-6 pt-4 border-t border-stone-200">
             <div className="text-xs font-medium text-stone-600 mb-2">
-              Quick Sign-In (Demo Credentials):
+              Quick Sign-In (Demo Role Credentials):
             </div>
             <div className="grid grid-cols-2 gap-2 text-xs">
               <button
@@ -106,7 +106,7 @@ export const Login: React.FC = () => {
                 onClick={() => handleQuickLogin('admin@agps.gov.in', 'AdminPassword123!')}
                 className="btn-secondary text-left px-2 py-1.5 flex flex-col"
               >
-                <span className="font-semibold text-stone-800">Admin</span>
+                <span className="font-semibold text-stone-800">Super Admin</span>
                 <span className="text-[10px] text-stone-500 font-mono">admin@agps.gov.in</span>
               </button>
 
@@ -117,6 +117,33 @@ export const Login: React.FC = () => {
               >
                 <span className="font-semibold text-stone-800">Auditor (CAG)</span>
                 <span className="text-[10px] text-stone-500 font-mono">auditor@cag.gov.in</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleQuickLogin('defence.officer@agps.gov.in', 'OfficerPassword123!')}
+                className="btn-secondary text-left px-2 py-1.5 flex flex-col"
+              >
+                <span className="font-semibold text-stone-800">Officer (Defence)</span>
+                <span className="text-[10px] text-stone-500 font-mono">defence.officer@agps.gov.in</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleQuickLogin('energy.officer@agps.gov.in', 'OfficerPassword123!')}
+                className="btn-secondary text-left px-2 py-1.5 flex flex-col"
+              >
+                <span className="font-semibold text-stone-800">Officer (Energy)</span>
+                <span className="text-[10px] text-stone-500 font-mono">energy.officer@agps.gov.in</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleQuickLogin('transport.officer@agps.gov.in', 'OfficerPassword123!')}
+                className="btn-secondary text-left px-2 py-1.5 flex flex-col col-span-2"
+              >
+                <span className="font-semibold text-stone-800">Officer (Transport)</span>
+                <span className="text-[10px] text-stone-500 font-mono">transport.officer@agps.gov.in</span>
               </button>
 
               <button

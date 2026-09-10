@@ -12,7 +12,7 @@
 
 import mongoose from 'mongoose';
 import { env } from '../config/env.js';
-import { User, VendorProfile, Tender, Bid, Evaluation } from '../models/index.js';
+import { User, VendorProfile, Tender, Bid, Evaluation, Department } from '../models/index.js';
 import { hashPassword } from '../utils/security.js';
 import { buildTenderConfigSnapshot } from '../services/configSnapshotService.js';
 import { createAuditEvent, verifyAuditChain } from '../services/auditService.js';
@@ -62,6 +62,7 @@ export async function seedDatabase(mongoUri: string = env.MONGODB_URI): Promise<
 
   console.log('Clearing existing collections...');
   await Promise.all([
+    Department.deleteMany({}),
     User.deleteMany({}),
     VendorProfile.deleteMany({}),
     Tender.deleteMany({}),
@@ -75,8 +76,43 @@ export async function seedDatabase(mongoUri: string = env.MONGODB_URI): Promise<
     // Collection might not exist yet
   }
 
-  console.log('1. Creating Users & Vendor Profiles...');
+  console.log('1. Creating Government Departments...');
+  const [deptDefence, deptEnergy, deptTransport, deptHealth, deptIT] = await Promise.all([
+    Department.create({
+      name: 'Ministry of Defence',
+      code: 'DEFENCE',
+      description: 'Department of Defence Production, Military Hardware & Security Systems',
+      isActive: true,
+    }),
+    Department.create({
+      name: 'Ministry of Power & Renewable Energy',
+      code: 'ENERGY',
+      description: 'Power Generation, Transmission, and Renewable Energy Infrastructure',
+      isActive: true,
+    }),
+    Department.create({
+      name: 'Ministry of Road Transport and Highways',
+      code: 'TRANSPORT',
+      description: 'Highway Construction, Expressways, and Public Transit Infrastructure',
+      isActive: true,
+    }),
+    Department.create({
+      name: 'Ministry of Health & Family Welfare',
+      code: 'HEALTH',
+      description: 'Medical Equipment, AIIMS Infrastructure, and Public Health Supplies',
+      isActive: true,
+    }),
+    Department.create({
+      name: 'Ministry of Electronics & Information Technology',
+      code: 'IT_INFRASTRUCTURE',
+      description: 'Digital India Initiatives, Data Centers, and Government IT Infrastructure',
+      isActive: true,
+    }),
+  ]);
+
+  console.log('2. Creating Users, Officers & Vendor Profiles...');
   const adminPasswordHash = await hashPassword('AdminPassword123!');
+  const officerPasswordHash = await hashPassword('OfficerPassword123!');
   const auditorPasswordHash = await hashPassword('AuditorPassword123!');
   const vendorPasswordHash = await hashPassword('VendorPassword123!');
 
@@ -84,7 +120,8 @@ export async function seedDatabase(mongoUri: string = env.MONGODB_URI): Promise<
     email: 'admin@agps.gov.in',
     passwordHash: adminPasswordHash,
     role: 'ADMIN',
-    name: 'Rajesh Kumar (Chief Procurement Officer)',
+    name: 'Rajesh Kumar (Chief Procurement Officer & Super Admin)',
+    isActive: true,
   });
 
   await User.create({
@@ -92,6 +129,57 @@ export async function seedDatabase(mongoUri: string = env.MONGODB_URI): Promise<
     passwordHash: auditorPasswordHash,
     role: 'AUDITOR',
     name: 'Suresh Sharma (Principal Auditor, CAG)',
+    isActive: true,
+  });
+
+  const defenceOfficer = await User.create({
+    email: 'defence.officer@agps.gov.in',
+    passwordHash: officerPasswordHash,
+    role: 'PROCUREMENT_OFFICER',
+    name: 'Vikram Batra (Defence Procurement Officer)',
+    departmentId: deptDefence._id,
+    isActive: true,
+  });
+
+  const energyOfficer = await User.create({
+    email: 'energy.officer@agps.gov.in',
+    passwordHash: officerPasswordHash,
+    role: 'PROCUREMENT_OFFICER',
+    name: 'Arjun Sharma (Energy Procurement Officer)',
+    departmentId: deptEnergy._id,
+    isActive: true,
+  });
+
+  const transportOfficer = await User.create({
+    email: 'transport.officer@agps.gov.in',
+    passwordHash: officerPasswordHash,
+    role: 'PROCUREMENT_OFFICER',
+    name: 'Nitin Deshmukh (Transport Procurement Officer)',
+    departmentId: deptTransport._id,
+    isActive: true,
+  });
+
+  // Audit logs for seeded procurement officers
+  await createAuditEvent({
+    actorId: admin._id,
+    actorRole: 'ADMIN',
+    action: 'OFFICER_CREATED',
+    description: `Provisioned officer: ${defenceOfficer.name} for ${deptDefence.name}`,
+    payload: { officerId: defenceOfficer._id.toString(), departmentId: deptDefence._id.toString() },
+  });
+  await createAuditEvent({
+    actorId: admin._id,
+    actorRole: 'ADMIN',
+    action: 'OFFICER_CREATED',
+    description: `Provisioned officer: ${energyOfficer.name} for ${deptEnergy.name}`,
+    payload: { officerId: energyOfficer._id.toString(), departmentId: deptEnergy._id.toString() },
+  });
+  await createAuditEvent({
+    actorId: admin._id,
+    actorRole: 'ADMIN',
+    action: 'OFFICER_CREATED',
+    description: `Provisioned officer: ${transportOfficer.name} for ${deptTransport.name}`,
+    payload: { officerId: transportOfficer._id.toString(), departmentId: deptTransport._id.toString() },
   });
 
   const vendorsData = [
@@ -136,6 +224,7 @@ export async function seedDatabase(mongoUri: string = env.MONGODB_URI): Promise<
     title: 'Medical Diagnostic Equipment Supply',
     description: 'Procurement of high-precision MRI and CT Scan systems for new AIIMS facility',
     department: 'Ministry of Health & Family Welfare',
+    departmentId: deptHealth._id,
     category: 'Medical Equipment',
     createdBy: admin._id,
     status: 'DRAFT',
@@ -165,7 +254,8 @@ export async function seedDatabase(mongoUri: string = env.MONGODB_URI): Promise<
     tenderCode: 'TND-2026-IT02',
     title: 'Government Cloud Infrastructure Migration',
     description: 'Migration of state data centers to hybrid cloud infrastructure with 99.99% SLA',
-    department: 'National Informatics Centre (NIC)',
+    department: 'Ministry of Electronics & Information Technology',
+    departmentId: deptIT._id,
     category: 'Information Technology',
     createdBy: admin._id,
     status: 'PUBLISHED',
@@ -187,7 +277,7 @@ export async function seedDatabase(mongoUri: string = env.MONGODB_URI): Promise<
   // ==========================================
   const snapshot3 = buildTenderConfigSnapshot({
     version: 1,
-    lockedBy: admin._id,
+    lockedBy: transportOfficer._id,
     constraints: { maxBudgetMinor: 50000000000, minQualityScore: 70, maxDeliveryDays: 120, minExperienceYears: 5 },
     eligibilityRules: baseEligibilityRules,
     scoringCriteria: standardCriteria,
@@ -198,9 +288,11 @@ export async function seedDatabase(mongoUri: string = env.MONGODB_URI): Promise<
     tenderCode: 'TND-2026-EV03',
     title: 'Electric Bus Fleet & Fast Charging Stations',
     description: 'Procurement of 100 zero-emission electric buses and 20 fast-charging depots',
-    department: 'Delhi Transport Corporation (DTC)',
+    department: 'Ministry of Road Transport and Highways',
+    departmentId: deptTransport._id,
+    assignedOfficerId: transportOfficer._id,
     category: 'Transportation',
-    createdBy: admin._id,
+    createdBy: transportOfficer._id,
     status: 'BIDDING_OPEN',
     configLockState: 'HARD_LOCKED',
     lockedConfig: { ...snapshot3, lockState: 'HARD_LOCKED', hardLockedAt: new Date(Date.now() - 86400000) },
@@ -212,9 +304,9 @@ export async function seedDatabase(mongoUri: string = env.MONGODB_URI): Promise<
     scoringCriteria: standardCriteria,
     firstBidAt: new Date(Date.now() - 86400000),
   });
-  await createAuditEvent({ tenderId: tender3._id, actorId: admin._id, actorRole: 'ADMIN', action: 'TENDER_CREATED', description: 'Tender created: EV Bus Fleet' });
-  await createAuditEvent({ tenderId: tender3._id, actorId: admin._id, actorRole: 'ADMIN', action: 'TENDER_PUBLISHED', description: 'Tender published', payload: { configHash: snapshot3.configHash } });
-  await createAuditEvent({ tenderId: tender3._id, actorId: admin._id, actorRole: 'ADMIN', action: 'BIDDING_OPENED', description: 'Bidding window opened' });
+  await createAuditEvent({ tenderId: tender3._id, actorId: transportOfficer._id, actorRole: 'PROCUREMENT_OFFICER', action: 'TENDER_CREATED', description: 'Tender created: EV Bus Fleet' });
+  await createAuditEvent({ tenderId: tender3._id, actorId: transportOfficer._id, actorRole: 'PROCUREMENT_OFFICER', action: 'TENDER_PUBLISHED', description: 'Tender published', payload: { configHash: snapshot3.configHash } });
+  await createAuditEvent({ tenderId: tender3._id, actorId: transportOfficer._id, actorRole: 'PROCUREMENT_OFFICER', action: 'BIDDING_OPENED', description: 'Bidding window opened' });
 
   const evBids = [
     { vendor: vendorUsers[0], price: 44000000000, days: 90, quality: 88 },
@@ -243,7 +335,7 @@ export async function seedDatabase(mongoUri: string = env.MONGODB_URI): Promise<
   // ==========================================
   const snapshot4 = buildTenderConfigSnapshot({
     version: 1,
-    lockedBy: admin._id,
+    lockedBy: energyOfficer._id,
     constraints: { maxBudgetMinor: 100000000000, minQualityScore: 65, maxDeliveryDays: 180, minExperienceYears: 5 },
     eligibilityRules: baseEligibilityRules,
     scoringCriteria: standardCriteria,
@@ -254,9 +346,11 @@ export async function seedDatabase(mongoUri: string = env.MONGODB_URI): Promise<
     tenderCode: 'TND-2026-SOLAR04',
     title: '50MW Grid-Connected Solar Power Plant',
     description: 'Turnkey EPC contract for design, engineering, procurement, and 5-year O&M of solar facility',
-    department: 'NTPC Renewable Energy Ltd',
+    department: 'Ministry of Power & Renewable Energy',
+    departmentId: deptEnergy._id,
+    assignedOfficerId: energyOfficer._id,
     category: 'Renewable Energy',
-    createdBy: admin._id,
+    createdBy: energyOfficer._id,
     status: 'BIDDING_CLOSED',
     configLockState: 'HARD_LOCKED',
     lockedConfig: { ...snapshot4, lockState: 'HARD_LOCKED', hardLockedAt: new Date(Date.now() - 86400000 * 5) },
@@ -269,9 +363,9 @@ export async function seedDatabase(mongoUri: string = env.MONGODB_URI): Promise<
     firstBidAt: new Date(Date.now() - 86400000 * 8),
   });
 
-  await createAuditEvent({ tenderId: tender4._id, actorId: admin._id, actorRole: 'ADMIN', action: 'TENDER_CREATED', description: 'Tender created: Solar EPC' });
-  await createAuditEvent({ tenderId: tender4._id, actorId: admin._id, actorRole: 'ADMIN', action: 'TENDER_PUBLISHED', description: 'Tender published', payload: { configHash: snapshot4.configHash } });
-  await createAuditEvent({ tenderId: tender4._id, actorId: admin._id, actorRole: 'ADMIN', action: 'BIDDING_OPENED', description: 'Bidding window opened' });
+  await createAuditEvent({ tenderId: tender4._id, actorId: energyOfficer._id, actorRole: 'PROCUREMENT_OFFICER', action: 'TENDER_CREATED', description: 'Tender created: Solar EPC' });
+  await createAuditEvent({ tenderId: tender4._id, actorId: energyOfficer._id, actorRole: 'PROCUREMENT_OFFICER', action: 'TENDER_PUBLISHED', description: 'Tender published', payload: { configHash: snapshot4.configHash } });
+  await createAuditEvent({ tenderId: tender4._id, actorId: energyOfficer._id, actorRole: 'PROCUREMENT_OFFICER', action: 'BIDDING_OPENED', description: 'Bidding window opened' });
 
   const solarBids = [
     { vendor: vendorUsers[0], price: 82000000000, days: 140, quality: 92, exp: 12, turnover: 85000000000 },
@@ -296,9 +390,9 @@ export async function seedDatabase(mongoUri: string = env.MONGODB_URI): Promise<
     await createAuditEvent({ tenderId: tender4._id, actorId: b.vendor._id, actorRole: 'VENDOR', action: 'BID_SUBMITTED', description: `Bid submitted by ${b.vendor.name}`, vendorId: b.vendor._id, payload: { bidId: bid._id.toString() } });
   }
 
-  await createAuditEvent({ tenderId: tender4._id, actorId: admin._id, actorRole: 'ADMIN', action: 'BIDDING_CLOSED', description: 'Bidding closed' });
-  await createAuditEvent({ tenderId: tender4._id, actorId: admin._id, actorRole: 'ADMIN', action: 'FINANCIAL_BIDS_OPENED', description: 'Financial bids unsealed' });
-  await runTenderEvaluation({ tenderId: tender4._id, configSnapshot: snapshot4, adminId: admin._id });
+  await createAuditEvent({ tenderId: tender4._id, actorId: energyOfficer._id, actorRole: 'PROCUREMENT_OFFICER', action: 'BIDDING_CLOSED', description: 'Bidding closed' });
+  await createAuditEvent({ tenderId: tender4._id, actorId: energyOfficer._id, actorRole: 'PROCUREMENT_OFFICER', action: 'FINANCIAL_BIDS_OPENED', description: 'Financial bids unsealed' });
+  await runTenderEvaluation({ tenderId: tender4._id, configSnapshot: snapshot4, adminId: energyOfficer._id });
 
   // ==========================================
   // Tender 5: CLOSED (Full Cycle Demo)
@@ -316,7 +410,8 @@ export async function seedDatabase(mongoUri: string = env.MONGODB_URI): Promise<
     tenderCode: 'TND-2026-CCTV05',
     title: 'Integrated City Surveillance System & Command Centre',
     description: 'Setup of 2000 AI-ready IP CCTV cameras, control room video wall, and data storage for 90 days',
-    department: 'Mumbai Smart City Development Corp',
+    department: 'Ministry of Electronics & Information Technology',
+    departmentId: deptIT._id,
     category: 'Surveillance & Security',
     createdBy: admin._id,
     status: 'BIDDING_CLOSED',
@@ -388,7 +483,9 @@ export async function seedDatabase(mongoUri: string = env.MONGODB_URI): Promise<
     tenderCode: 'TND-2026-FLIP-A',
     title: 'Enterprise Server Infrastructure (Config A - Price Heavy 40/30/20/10)',
     description: 'Procurement of datacenter blade servers evaluated with 40% Price weighting',
-    department: 'Department of Telecommunications',
+    department: 'Ministry of Defence',
+    departmentId: deptDefence._id,
+    assignedOfficerId: defenceOfficer._id,
     category: 'IT Hardware',
     createdBy: admin._id,
     status: 'BIDDING_CLOSED',
@@ -462,7 +559,9 @@ export async function seedDatabase(mongoUri: string = env.MONGODB_URI): Promise<
     tenderCode: 'TND-2026-FLIP-B',
     title: 'Enterprise Server Infrastructure (Config B - Quality Heavy 20/50/20/10)',
     description: 'Identical bids evaluated with 50% Quality weighting, demonstrating transparent weight-driven ranking flip',
-    department: 'Department of Telecommunications',
+    department: 'Ministry of Defence',
+    departmentId: deptDefence._id,
+    assignedOfficerId: defenceOfficer._id,
     category: 'IT Hardware',
     createdBy: admin._id,
     status: 'BIDDING_CLOSED',
@@ -559,7 +658,9 @@ export async function seedDatabase(mongoUri: string = env.MONGODB_URI): Promise<
     tenderCode: 'TND-2026-003',
     title: 'High-Security Datacenter Infrastructure & 24/7 Managed O&M',
     description: 'Generic 6-criteria procurement demonstrating TECHNICAL_VALUE sourcing for warranty and SLA response time',
-    department: 'Defence Research and Development Organisation (DRDO)',
+    department: 'Ministry of Defence',
+    departmentId: deptDefence._id,
+    assignedOfficerId: defenceOfficer._id,
     category: 'Defence IT Infrastructure',
     createdBy: admin._id,
     status: 'BIDDING_CLOSED',

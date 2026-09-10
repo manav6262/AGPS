@@ -19,7 +19,7 @@ export interface AuditVerificationResult {
 }
 
 export interface CreateAuditEventParams {
-  tenderId: string | Types.ObjectId;
+  tenderId?: string | Types.ObjectId | null;
   actorId: string | Types.ObjectId;
   actorRole: string;
   action: AuditAction;
@@ -30,7 +30,7 @@ export interface CreateAuditEventParams {
 }
 
 export async function createAuditEvent(params: CreateAuditEventParams): Promise<IAuditLog> {
-  const tenderObjectId = new Types.ObjectId(params.tenderId);
+  const tenderObjectId = params.tenderId ? new Types.ObjectId(params.tenderId) : null;
   const actorObjectId = new Types.ObjectId(params.actorId);
   const vendorObjectId = params.vendorId ? new Types.ObjectId(params.vendorId) : null;
   const timestamp = params.timestamp ?? new Date();
@@ -39,7 +39,7 @@ export async function createAuditEvent(params: CreateAuditEventParams): Promise<
   const MAX_ATTEMPTS = 15;
   for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
     try {
-      // Find the most recent audit entry for this tender to obtain the latest seq and hash
+      // Find the most recent audit entry for this tender (or system if tender is null) to obtain the latest seq and hash
       const lastEntry = await AuditLog.findOne({ tender: tenderObjectId })
         .sort({ seq: -1 })
         .exec();
@@ -52,7 +52,7 @@ export async function createAuditEvent(params: CreateAuditEventParams): Promise<
         timestamp,
         actorId: actorObjectId.toString(),
         action: params.action,
-        tenderId: tenderObjectId.toString(),
+        tenderId: tenderObjectId ? tenderObjectId.toString() : null,
         vendorId: vendorObjectId ? vendorObjectId.toString() : null,
         description: params.description,
         payload,
@@ -135,7 +135,7 @@ export async function verifyAuditChain(
       timestamp: entry.timestamp,
       actorId: entry.actor.toString(),
       action: entry.action,
-      tenderId: entry.tender.toString(),
+      tenderId: entry.tender ? entry.tender.toString() : null,
       vendorId: entry.vendor ? entry.vendor.toString() : null,
       description: entry.description,
       payload: entry.payload ?? {},

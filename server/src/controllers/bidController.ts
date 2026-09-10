@@ -6,6 +6,7 @@ import { Request, Response, NextFunction } from 'express';
 import { Bid } from '../models/bid.js';
 import { submitBid, getBidsForTender } from '../services/bidService.js';
 import { submitBidSchema } from '../validators/bid.validator.js';
+import { verifyTenderDepartmentAccess } from './tenderController.js';
 import { Types } from 'mongoose';
 
 export async function submitBidHandler(
@@ -72,7 +73,7 @@ export async function getBidById(req: Request, res: Response, next: NextFunction
         ? { _id: new Types.ObjectId(id as string), vendor: new Types.ObjectId(req.user.id) }
         : { _id: new Types.ObjectId(id as string) };
 
-    const query = Bid.findOne(filter).populate('tender', 'status');
+    const query = Bid.findOne(filter).populate('tender', 'status department departmentId');
 
     // Vendors can always see their own price; Admin/Auditor only if unsealed
     if (req.user.role === 'VENDOR') {
@@ -85,6 +86,18 @@ export async function getBidById(req: Request, res: Response, next: NextFunction
       // Return 404 (does not leak existence of other vendors' bids)
       res.status(404).json({ error: 'NOT_FOUND', message: 'Bid not found' });
       return;
+    }
+
+    // Scoped check for procurement officer
+    if (req.user.role === 'PROCUREMENT_OFFICER' && bid.tender) {
+      const hasAccess = await verifyTenderDepartmentAccess(bid.tender, req.user);
+      if (!hasAccess) {
+        res.status(403).json({
+          error: 'FORBIDDEN',
+          message: 'Forbidden: you cannot access bids for tenders outside your authorized department',
+        });
+        return;
+      }
     }
 
     // Price sealing check for Admin/Auditor (SPEC §17.4)

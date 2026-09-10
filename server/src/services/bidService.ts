@@ -6,7 +6,8 @@ import { Types } from 'mongoose';
 import { Bid, IBid } from '../models/bid.js';
 import { Tender } from '../models/tender.js';
 import { VendorProfile } from '../models/vendorProfile.js';
-import { UserRole } from '../models/user.js';
+import { UserRole, User } from '../models/user.js';
+import { Department } from '../models/department.js';
 import { AppError } from './tenderService.js';
 import { computeDerivedQualityScore } from '../engines/qualityEngine.js';
 import { createAuditEvent } from './auditService.js';
@@ -164,11 +165,29 @@ export async function submitBid(
 
 export async function getBidsForTender(
   tenderId: string | Types.ObjectId,
-  user: { id: string; role: UserRole }
+  user: { id: string; role: UserRole; departmentId?: string }
 ): Promise<any[]> {
   const tender = await Tender.findById(tenderId);
   if (!tender) {
     throw new AppError(404, 'NOT_FOUND', 'Tender not found');
+  }
+
+  // PROCUREMENT_OFFICER department scope verification
+  if (user.role === 'PROCUREMENT_OFFICER') {
+    let officerDeptId = user.departmentId;
+    if (!officerDeptId) {
+      const u = await User.findById(user.id);
+      officerDeptId = u?.departmentId?.toString();
+    }
+    const dept = officerDeptId ? await Department.findById(officerDeptId) : null;
+    const hasDeptAccess =
+      officerDeptId &&
+      ((tender.departmentId && tender.departmentId.toString() === officerDeptId.toString()) ||
+        (dept && dept.name === tender.department));
+
+    if (!hasDeptAccess) {
+      throw new AppError(403, 'FORBIDDEN', 'Forbidden: you cannot view bids for tenders from other government departments');
+    }
   }
 
   // VENDOR can never see other vendors' bids (SPEC §4, §17.2)

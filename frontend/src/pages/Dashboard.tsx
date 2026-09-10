@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext.js';
 import { api } from '../services/api.js';
 import { ITender } from '@agps/shared';
 import { StatusBadge } from '../components/common/StatusBadge.js';
-import { FileText, ShieldCheck, PlusCircle, CheckCircle2, ArrowRight } from 'lucide-react';
+import { FileText, ShieldCheck, PlusCircle, CheckCircle2, ArrowRight, Users } from 'lucide-react';
 
 export const Dashboard: React.FC = () => {
   const { user, vendorProfile } = useAuth();
@@ -37,6 +37,8 @@ export const Dashboard: React.FC = () => {
   const closedCount = summary ? summary.closedTenders : tenders.filter((t) => t.status === 'CLOSED').length;
   const totalBidsCount = summary ? summary.totalBids : 0;
 
+  const isAdmin = user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN';
+
   return (
     <div className="space-y-6">
       {/* Top Banner */}
@@ -54,11 +56,17 @@ export const Dashboard: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-2">
-          {user?.role === 'ADMIN' && (
-            <Link to="/tenders/new" className="btn-primary flex items-center gap-1.5">
-              <PlusCircle className="w-4 h-4" />
-              <span>Create Tender</span>
-            </Link>
+          {isAdmin && (
+            <>
+              <Link to="/admin/officers" className="btn-secondary flex items-center gap-1.5 text-xs py-1.5 px-3">
+                <Users className="w-4 h-4 text-stone-600" />
+                <span>Manage Officers</span>
+              </Link>
+              <Link to="/tenders/new" className="btn-primary flex items-center gap-1.5 text-xs py-1.5 px-3">
+                <PlusCircle className="w-4 h-4" />
+                <span>Create Tender</span>
+              </Link>
+            </>
           )}
           <Link to="/tenders" className="btn-secondary flex items-center gap-1.5">
             <FileText className="w-4 h-4" />

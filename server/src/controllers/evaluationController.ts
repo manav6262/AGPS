@@ -7,6 +7,7 @@ import { runTenderEvaluation } from '../services/evaluationService.js';
 import { Tender } from '../models/tender.js';
 import { Evaluation } from '../models/evaluation.js';
 import { AppError } from '../services/tenderService.js';
+import { verifyTenderDepartmentAccess } from './tenderController.js';
 import { Types } from 'mongoose';
 
 export async function evaluateTenderHandler(
@@ -25,6 +26,17 @@ export async function evaluateTenderHandler(
     if (!tender) {
       res.status(404).json({ error: 'NOT_FOUND', message: 'Tender not found' });
       return;
+    }
+
+    if (req.user?.role === 'PROCUREMENT_OFFICER') {
+      const hasAccess = await verifyTenderDepartmentAccess(tender, req.user);
+      if (!hasAccess) {
+        res.status(403).json({
+          error: 'FORBIDDEN',
+          message: 'Forbidden: you cannot evaluate tenders outside your authorized department',
+        });
+        return;
+      }
     }
 
     if (!tender.lockedConfig) {
@@ -54,6 +66,23 @@ export async function getTenderEvaluationHandler(
     if (!Types.ObjectId.isValid(id as string)) {
       res.status(404).json({ error: 'NOT_FOUND', message: 'Tender not found' });
       return;
+    }
+
+    const tender = await Tender.findById(id as string);
+    if (!tender) {
+      res.status(404).json({ error: 'NOT_FOUND', message: 'Tender not found' });
+      return;
+    }
+
+    if (req.user?.role === 'PROCUREMENT_OFFICER') {
+      const hasAccess = await verifyTenderDepartmentAccess(tender, req.user);
+      if (!hasAccess) {
+        res.status(403).json({
+          error: 'FORBIDDEN',
+          message: 'Forbidden: you cannot view evaluations for tenders outside your authorized department',
+        });
+        return;
+      }
     }
 
     const evaluation = await Evaluation.findOne({ tender: new Types.ObjectId(id as string) })

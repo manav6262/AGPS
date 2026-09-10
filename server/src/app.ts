@@ -11,6 +11,8 @@ import { authRouter } from './routes/authRoutes.js';
 import { bidRouter } from './routes/bidRoutes.js';
 import { tenderRouter } from './routes/tenderRoutes.js';
 import { vendorRouter } from './routes/vendorRoutes.js';
+import { officerRouter } from './routes/officerRoutes.js';
+import { departmentRouter } from './routes/departmentRoutes.js';
 import { dashboardSummaryHandler } from './controllers/sensitivityController.js';
 import { authenticateToken, requireRole } from './middleware/auth.js';
 import { errorHandler } from './middleware/errorHandler.js';
@@ -64,6 +66,8 @@ app.use('/api/auth', authRouter);
 app.use('/api/bids', bidRouter);
 app.use('/api/tenders', tenderRouter);
 app.use('/api/vendors', vendorRouter);
+app.use('/api/admin/officers', officerRouter);
+app.use('/api/departments', departmentRouter);
 
 // Central error handler (SPEC §17.4)
 app.use(errorHandler);

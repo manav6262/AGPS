@@ -1,17 +1,22 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { api } from '../services/api.js';
-import { ScoringCriterion, EligibilityRule } from '@agps/shared';
-import { PlusCircle, Trash2, ArrowLeft, AlertCircle } from 'lucide-react';
+import { ScoringCriterion, EligibilityRule, IDepartment } from '@agps/shared';
+import { useAuth } from '../context/AuthContext.js';
+import { PlusCircle, Trash2, ArrowLeft, AlertCircle, Building2, Lock } from 'lucide-react';
 
 export const CreateTender: React.FC = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const isOfficer = user?.role === 'PROCUREMENT_OFFICER';
 
+  const [departments, setDepartments] = useState<IDepartment[]>([]);
   const [formData, setFormData] = useState({
     tenderCode: `TND-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`,
     title: '',
     description: '',
-    department: 'Ministry of Electronics & Information Technology',
+    departmentId: '',
+    department: '',
     category: 'Information Technology',
     startAt: new Date(Date.now() + 3600000).toISOString().slice(0, 16),
     deadlineAt: new Date(Date.now() + 86400000 * 15).toISOString().slice(0, 16),
@@ -20,6 +25,43 @@ export const CreateTender: React.FC = () => {
     maxDeliveryDays: 60,
     minExperienceYears: 3,
   });
+
+  useEffect(() => {
+    async function loadDepartments() {
+      try {
+        const res = await api.departments.list();
+        const depts: IDepartment[] = res.departments || [];
+        setDepartments(depts);
+
+        if (isOfficer && user) {
+          // Officer scope is strictly locked to their department
+          const officerDeptId =
+            user.departmentId ||
+            (typeof user.department === 'object' && user.department ? user.department._id : '');
+          const matched = depts.find(
+            (d) => d._id === officerDeptId || (user.department && typeof user.department === 'string' && d.name.includes(user.department))
+          ) || depts[0];
+
+          if (matched) {
+            setFormData((prev) => ({
+              ...prev,
+              departmentId: matched._id,
+              department: matched.name,
+            }));
+          }
+        } else if (depts.length > 0) {
+          setFormData((prev) => ({
+            ...prev,
+            departmentId: prev.departmentId || depts[0]._id,
+            department: prev.department || depts[0].name,
+          }));
+        }
+      } catch (err) {
+        console.error('Failed to load departments', err);
+      }
+    }
+    loadDepartments();
+  }, [isOfficer, user]);
 
   const [scoringCriteria, setScoringCriteria] = useState<ScoringCriterion[]>([
     { key: 'price', label: 'Commercial Price', direction: 'lower', weight: 40, unit: 'INR', valueSource: { type: 'BID_FIELD', path: 'priceMinor' } },
@@ -41,10 +83,19 @@ export const CreateTender: React.FC = () => {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: type === 'number' ? Number(value) : value,
-    }));
+    if (name === 'departmentId') {
+      const selectedDept = departments.find((d) => d._id === value);
+      setFormData((prev) => ({
+        ...prev,
+        departmentId: value,
+        department: selectedDept ? selectedDept.name : prev.department,
+      }));
+    } else {
+      setFormData((prev) => ({
+        ...prev,
+        [name]: type === 'number' ? Number(value) : value,
+      }));
+    }
   };
 
   const handleWeightChange = (index: number, newWeight: number) => {
@@ -78,7 +129,7 @@ export const CreateTender: React.FC = () => {
     setLoading(true);
 
     try {
-      const payload = {
+      const payload: any = {
         tenderCode: formData.tenderCode,
         title: formData.title,
         description: formData.description,
@@ -95,6 +146,10 @@ export const CreateTender: React.FC = () => {
         scoringCriteria,
         eligibilityRules,
       };
+
+      if (formData.departmentId) {
+        payload.departmentId = formData.departmentId;
+      }
 
       const res = await api.tenders.create(payload);
       navigate(`/tenders/${res.tender._id}`);
@@ -154,17 +209,37 @@ export const CreateTender: React.FC = () => {
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-stone-700 mb-1">
-                Issuing Ministry / Department *
+              <label className="block text-xs font-medium text-stone-700 mb-1 flex items-center justify-between">
+                <span>Issuing Ministry / Department *</span>
+                {isOfficer && (
+                  <span className="text-[10px] text-amber-700 font-normal inline-flex items-center gap-1">
+                    <Lock className="w-3 h-3" /> Locked to assigned scope
+                  </span>
+                )}
               </label>
-              <input
-                type="text"
-                required
-                name="department"
-                value={formData.department}
-                onChange={handleInputChange}
-                className="w-full text-xs"
-              />
+              {isOfficer ? (
+                <div className="p-2 bg-stone-100 border border-stone-300 rounded text-xs text-stone-800 font-medium flex items-center justify-between">
+                  <div className="flex items-center gap-1.5">
+                    <Building2 className="w-3.5 h-3.5 text-stone-500" />
+                    <span>{formData.department || 'Your Department'}</span>
+                  </div>
+                  <span className="text-[10px] text-stone-500 font-mono">SCOPED</span>
+                </div>
+              ) : (
+                <select
+                  required
+                  name="departmentId"
+                  value={formData.departmentId}
+                  onChange={handleInputChange}
+                  className="w-full text-xs"
+                >
+                  {departments.map((dept) => (
+                    <option key={dept._id} value={dept._id}>
+                      {dept.name} ({dept.code})
+                    </option>
+                  ))}
+                </select>
+              )}
             </div>
 
             <div className="sm:col-span-2">

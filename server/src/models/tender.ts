@@ -125,6 +125,8 @@ export interface ITender extends Document {
   title: string;
   description: string;
   department: string;
+  departmentId?: Types.ObjectId | null;
+  assignedOfficerId?: Types.ObjectId | null;
   category: string;
   createdBy: Types.ObjectId;
   status: TenderStatus;
@@ -172,6 +174,18 @@ const tenderSchema = new Schema<ITender>(
     title: { type: String, required: true, trim: true },
     description: { type: String, required: true, trim: true },
     department: { type: String, required: true, trim: true },
+    departmentId: {
+      type: Schema.Types.ObjectId,
+      ref: 'Department',
+      default: null,
+      index: true,
+    },
+    assignedOfficerId: {
+      type: Schema.Types.ObjectId,
+      ref: 'User',
+      default: null,
+      index: true,
+    },
     category: { type: String, required: true, trim: true },
     createdBy: {
       type: Schema.Types.ObjectId,

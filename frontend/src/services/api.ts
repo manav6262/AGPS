@@ -217,4 +217,40 @@ export const api = {
         body: JSON.stringify(data),
       }),
   },
+
+  // Departments
+  departments: {
+    list: () =>
+      request('/departments'),
+  },
+
+  // Admin Officer Management
+  admin: {
+    officers: {
+      list: (params?: Record<string, string>) => {
+        const query = params ? `?${new URLSearchParams(params).toString()}` : '';
+        return request(`/admin/officers${query}`);
+      },
+      create: (data: {
+        name: string;
+        email: string;
+        password: string;
+        departmentId: string;
+      }) =>
+        request('/admin/officers', {
+          method: 'POST',
+          body: JSON.stringify(data),
+        }),
+      updateStatus: (id: string, isActive: boolean) =>
+        request(`/admin/officers/${id}/status`, {
+          method: 'PATCH',
+          body: JSON.stringify({ isActive }),
+        }),
+      updateDepartment: (id: string, departmentId: string) =>
+        request(`/admin/officers/${id}/department`, {
+          method: 'PATCH',
+          body: JSON.stringify({ departmentId }),
+        }),
+    },
+  },
 };
